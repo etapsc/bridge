@@ -100,7 +100,7 @@ The script auto-detects its source:
 
 ## Quick Reference
 
-| Slash Command | Mode | Purpose |
+| Slash Command | RooCode Mode | Purpose |
 |---------------|------|---------|
 | `/bridge-brainstorm` | any | Phase 0: brainstorm a new idea |
 | `/bridge-requirements` | any | Phase 1: generate requirements from brainstorm |
