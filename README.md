@@ -55,6 +55,10 @@ The key insight: BRIDGE keeps the agent in a fix loop on the current slice until
 | `codex/` | AGENTS.md + skills for **OpenAI Codex CLI**. | Use with the `codex` CLI. Single-agent with skill invocation via `$skill-name`. |
 | `opencode/` | AGENTS.md + agents + skills + commands for **OpenCode CLI**. | Use with the `opencode` CLI. Subagents via `@mention`, native skill discovery. |
 
+## Platform Guides
+
+Each platform has a different architecture (mode-switching, subagents, single-agent) and invocation syntax. See **[reference/platform-guides.md](reference/platform-guides.md)** for step-by-step workflows, setup recaps, and a full command reference matrix for RooCode, Claude Code, and Codex.
+
 ## Quick Start (remote install)
 
 ```bash
@@ -150,7 +154,7 @@ Context: /bridge-context-create · /bridge-context-update
 External: /bridge-offload · /bridge-reintegrate
 ```
 
-## Model Recommendations
+## Model Recommendations for RooCode
 
 | Role | Mode | Model | Reasoning |
 |------|------|-------|-----------|
@@ -160,18 +164,4 @@ External: /bridge-offload · /bridge-reintegrate
 | Debugger | `debug` | Sonnet 4.6 | Reasoning |
 | Auditor | `audit` | GPT-5.3 Codex | Medium |
 | Evaluator | `evaluate` | Opus 4.6 | Standard |
-| Ask | `ask` | GPT 5.2 | Low |
-
-## Testing
-
-BAD: GPT-5.3 Codex sucks as both Coder and Debugger!!!!
-
-| Role | Mode | Model | Reasoning |
-|------|------|-------|-----------|
-| Orchestrator | `orchestrator` | Gemini 3.1 Pro | High |
-| Architect | `architect` | Gemini 3.1 Pro | High |
-| Developer | `code` | GPT-5.3 Codex | High |
-| Debugger | `debug` | GPT-5.3 Codex | XHigh |
-| Auditor | `audit` | GPT-5.3 Codex | Medium |
-| Evaluator | `evaluate` | Gemini 3.1 Pro | High |
 | Ask | `ask` | GPT 5.2 | Low |
