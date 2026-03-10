@@ -12,7 +12,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PACKS=("bridge-full" "bridge-standalone" "bridge-codex" "bridge-opencode")
+PACKS=("bridge-full" "bridge-standalone" "bridge-codex" "bridge-opencode" "bridge-controller")
 
 for pack in "${PACKS[@]}"; do
   if [ ! -d "${SCRIPT_DIR}/$pack" ]; then
@@ -32,6 +32,17 @@ fi
 if [ -d "${CLAUDE_CODE}/project" ]; then
   tar -czf "${SCRIPT_DIR}/bridge-claude-code.tar.gz" -C "${CLAUDE_CODE}/project" .
   echo "  bridge-claude-code.tar.gz"
+fi
+
+# bridge-multi-repo: two separate archives from claude-code/ and codex/
+MULTI_REPO="${SCRIPT_DIR}/bridge-multi-repo"
+if [ -d "${MULTI_REPO}/claude-code" ]; then
+  tar -czf "${SCRIPT_DIR}/bridge-multi-repo-claude-code.tar.gz" -C "${MULTI_REPO}/claude-code" .
+  echo "  bridge-multi-repo-claude-code.tar.gz"
+fi
+if [ -d "${MULTI_REPO}/codex" ]; then
+  tar -czf "${SCRIPT_DIR}/bridge-multi-repo-codex.tar.gz" -C "${MULTI_REPO}/codex" .
+  echo "  bridge-multi-repo-codex.tar.gz"
 fi
 
 echo ""

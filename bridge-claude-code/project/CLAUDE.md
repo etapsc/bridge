@@ -80,5 +80,3 @@ These skills are auto-discovered. Key ones:
 - **bridge-session-management** — session re-entry briefs and wrap-up procedures
 - **bridge-context-sync** — create or update context.json from code reality
 - **bridge-feedback-process** — triage evaluation feedback, decide iterate vs launch
-- **bridge-external-handoff** — package task for external agent
-- **bridge-external-reintegrate** — validate and fold back external work

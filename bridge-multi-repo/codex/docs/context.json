@@ -1,0 +1,34 @@
+{
+  "schema": "context.v1",
+  "project": {
+    "name": "{{PROJECT_NAME}}"
+  },
+  "workspace": {
+    "topology": "multi-repo",
+    "repos": []
+  },
+  "feature_status": [],
+  "handoff": {
+    "stopped_at": "Workspace initialization",
+    "next_immediate": "",
+    "watch_out": []
+  },
+  "slice_history": [],
+  "current_slice": null,
+  "next_slice": null,
+  "repo_commands": {},
+  "repo_state": [],
+  "quality_gates": {
+    "last_run": null,
+    "status": null
+  },
+  "recent_decisions": [],
+  "blockers": [],
+  "discrepancies": [],
+  "commands_to_run": {
+    "test": "",
+    "lint": "",
+    "typecheck": "",
+    "build": ""
+  }
+}

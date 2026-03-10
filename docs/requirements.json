@@ -9,8 +9,8 @@
   "scope": {
     "in_scope": [
       "5 distributable packs: RooCode Full, RooCode Standalone, Claude Code, Codex, OpenCode",
-      "18 slash commands consistent across all packs",
-      "8 procedure skills per pack (adapted to pack architecture)",
+      "15 slash commands consistent across all packs",
+      "6 procedure skills per pack (adapted to pack architecture)",
       "Interactive setup.sh for project initialization",
       "reference/BRIDGE-v2.1-methodology.md comprehensive methodology doc",
       "README.md with installation and usage instructions",
@@ -54,19 +54,19 @@
     "F02": {
       "title": "RooCode Standalone Pack",
       "priority": "must",
-      "description": ".roo/commands/ with 18 self-contained command files embedding full prompts. No external rules or skills dependencies. docs/ templates included.",
+      "description": ".roo/commands/ with 15 self-contained command files embedding full prompts. No external rules or skills dependencies. docs/ templates included.",
       "status": "done"
     },
     "F03": {
       "title": "Claude Code Pack",
       "priority": "must",
-      "description": "CLAUDE.md (global rules + delegation model), .claude/agents/ (5 subagents), .claude/skills/ (8 procedures), .claude/commands/ (18 commands), .claude/hooks/README.md, docs/ templates.",
+      "description": "CLAUDE.md (global rules + delegation model), .claude/agents/ (5 subagents), .claude/skills/ (6 procedures), .claude/commands/ (15 commands), .claude/hooks/README.md, docs/ templates.",
       "status": "done"
     },
     "F04": {
       "title": "Codex Pack",
       "priority": "must",
-      "description": "AGENTS.md (global rules + role modes), .agents/skills/ (18 user-invokable workflow skills), .agents/procedures/ (8 internal procedure docs referenced by workflow skills), .codex/config.toml, docs/ templates.",
+      "description": "AGENTS.md (global rules + role modes), .agents/skills/ (15 user-invokable workflow skills), .agents/procedures/ (6 internal procedure docs referenced by workflow skills), .codex/config.toml, docs/ templates.",
       "status": "done"
     },
     "F05": {
@@ -82,9 +82,9 @@
       "status": "done"
     },
     "F07": {
-      "title": "18 Consistent Commands",
+      "title": "15 Consistent Commands",
       "priority": "must",
-      "description": "All packs implement the same 18 commands: brainstorm, scope, requirements, requirements-only, feature, design, migrate, start, resume, end, gate, eval, feedback, offload, reintegrate, context-create, context-update, advisor.",
+      "description": "All packs implement the same 15 commands: brainstorm, scope, requirements, requirements-only, feature, design, start, resume, end, gate, eval, feedback, context-create, context-update, advisor.",
       "status": "done"
     },
     "F08": {
@@ -108,7 +108,7 @@
     "F11": {
       "title": "OpenCode Pack",
       "priority": "must",
-      "description": "AGENTS.md (global rules + delegation model), .opencode/agents/ (5 subagents), .opencode/skills/ (8 procedures), .opencode/commands/ (18 commands), docs/ templates.",
+      "description": "AGENTS.md (global rules + delegation model), .opencode/agents/ (5 subagents), .opencode/skills/ (6 procedures), .opencode/commands/ (15 commands), docs/ templates.",
       "status": "done"
     },
     "F12": {
@@ -122,6 +122,18 @@
       "priority": "should",
       "description": "bridge-advisor command providing honest multi-perspective review of project viability, quality, positioning, community engagement, roadmap gaps, and launch readiness. Three simulated roles: Product Strategist, Developer Advocate, Critical Friend.",
       "status": "done"
+    },
+    "F14": {
+      "title": "Controller Pack",
+      "priority": "should",
+      "description": "Portfolio-level orchestrator for managing multiple BRIDGE projects. CLAUDE.md + .claude/commands/ (3 commands: bridge-status, bridge-init-project, bridge-sync) + .claude/rules/controller.md + docs/portfolio.json + reference/controller-guide.md. Discovers child projects via .bridgeinclude markers, maintains portfolio state, scaffolds BRIDGE into child projects.",
+      "status": "done"
+    },
+    "F15": {
+      "title": "Multi-Repo Pack",
+      "priority": "should",
+      "description": "Cross-repo workspace orchestrator with two variants (claude-code and codex). 12 commands including 4 cross-repo specific (bridge-cross-design, bridge-cross-review, bridge-cross-sync, bridge-repo-status) plus adapted standard workflow commands. Manages coordinated branching, contracts, and two-phase gates across repos.",
+      "status": "done"
     }
   },
   "acceptance_tests": {
@@ -129,13 +141,15 @@
     "AT02": "setup.sh --pack standalone --name TestProject creates project with self-contained commands",
     "AT03": "setup.sh --pack claude-code --name TestProject creates project with CLAUDE.md and .claude/ structure",
     "AT04": "setup.sh --pack codex --name TestProject creates project with AGENTS.md and .agents/ structure",
-    "AT05": "All 18 commands present and functional in each pack",
+    "AT05": "All 15 commands present and functional in each pack",
     "AT06": "bridge-scope and bridge-feature commands work against an existing codebase with existing requirements.json",
     "AT07": "Orchestrator stays in current slice fix loop when user reports issues after slice delivery (does not ask about next slice)",
     "AT08": "Orchestrator advances to next slice only on explicit user approval",
     "AT09": "Post-delivery feedback loop present in: orchestrator rules, slice-plan skill, CLAUDE.md, AGENTS.md, standalone start/resume commands",
     "AT10": "package.sh rebuilds all 5 tar.gz files from source folders",
-    "AT11": "setup.sh --pack opencode --name TestProject creates project with AGENTS.md and .opencode/ structure"
+    "AT11": "setup.sh --pack opencode --name TestProject creates project with AGENTS.md and .opencode/ structure",
+    "AT12": "bridge-controller pack contains CLAUDE.md, 3 commands (bridge-status, bridge-init-project, bridge-sync), controller rules, portfolio.json template, and reference guide",
+    "AT13": "bridge-multi-repo pack contains both claude-code and codex variants, each with 12 commands/skills, multi-repo rules, workspace docs templates, and reference playbook"
   },
   "user_flows": {
     "UF01": {
@@ -153,6 +167,14 @@
     "UF04": {
       "title": "Slice Fix Loop",
       "steps": ["slice delivered → user reports issues → orchestrator fixes → re-presents → user approves → gate"]
+    },
+    "UF05": {
+      "title": "Portfolio Management",
+      "steps": ["bridge-init-project (scaffold child) → bridge-status (portfolio view) → bridge-sync (pull state)"]
+    },
+    "UF06": {
+      "title": "Cross-Repo Feature",
+      "steps": ["bridge-scope → bridge-cross-design → bridge-start → (cross-repo slices) → bridge-gate (two-phase) → bridge-cross-review"]
     }
   },
   "risks": {
@@ -186,7 +208,7 @@
     ],
     "open_questions": [
       "Should the feedback loop classification be configurable per-project (e.g., in human-playbook.md)?",
-      "Should package.sh also run validation (e.g., check all 18 commands exist in each pack)?"
+      "Should package.sh also run validation (e.g., check all 15 commands exist in each pack)?"
     ]
   }
 }

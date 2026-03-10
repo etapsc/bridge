@@ -17,7 +17,7 @@ BRIDGE fixes this by wrapping your AI agent in a disciplined lifecycle:
 - **Feedback loops** — the agent fixes current issues before moving on
 - **Session continuity** — resume exactly where you left off
 
-It's not another prompt collection. It's a complete methodology with 18 commands, role-based delegation, and cross-platform portability.
+It's not another prompt collection. It's a complete methodology with 15 commands, role-based delegation, and cross-platform portability.
 
 ## Example Session
 
@@ -112,7 +112,6 @@ The script auto-detects its source:
 | `/bridge-scope` | orchestrator | Phase 0: scope a feature/fix for an existing project |
 | `/bridge-feature` | orchestrator | Phase 1: incremental requirements for existing project |
 | `/bridge-design` | orchestrator | Integrate a design document, PRD, or version spec |
-| `/bridge-migrate` | orchestrator | Migrate existing BRIDGE v1 project to v2.1 |
 | `/bridge-start` | orchestrator | Start implementation from requirements |
 | `/bridge-context-create` | orchestrator | Create context.json from codebase |
 | `/bridge-context-update` | orchestrator | Sync context.json with code reality |
@@ -121,8 +120,6 @@ The script auto-detects its source:
 | `/bridge-gate` | audit | Run quality gate |
 | `/bridge-eval` | evaluate | Generate evaluation pack |
 | `/bridge-feedback` | orchestrator | Process evaluation feedback |
-| `/bridge-offload` | orchestrator | Prepare external agent handoff |
-| `/bridge-reintegrate` | orchestrator | Re-integrate external agent work |
 | `/bridge-advisor` | any | Strategic project review and launch readiness |
 
 ## Typical Flow
@@ -155,7 +152,6 @@ The script auto-detects its source:
 
 Session: /bridge-resume (start) · /bridge-end (stop)
 Context: /bridge-context-create · /bridge-context-update
-External: /bridge-offload · /bridge-reintegrate
 ```
 
 ## Model Recommendations for RooCode

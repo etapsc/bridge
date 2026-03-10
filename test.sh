@@ -16,19 +16,18 @@ pass() { PASSED=$((PASSED + 1)); printf "  \033[32m✓\033[0m %s\n" "$1"; }
 fail() { FAILED=$((FAILED + 1)); ERRORS+=("$1"); printf "  \033[31m✗\033[0m %s\n" "$1"; }
 section() { printf "\n\033[1m━━━ %s ━━━\033[0m\n" "$1"; }
 
-# --- Expected 18 commands ---
+# --- Expected 15 commands ---
 COMMANDS=(
   bridge-advisor bridge-brainstorm bridge-context-create bridge-context-update
   bridge-design bridge-end bridge-eval bridge-feature bridge-feedback
-  bridge-gate bridge-migrate bridge-offload bridge-reintegrate
-  bridge-requirements-only bridge-requirements bridge-resume bridge-scope bridge-start
+  bridge-gate bridge-requirements-only bridge-requirements bridge-resume
+  bridge-scope bridge-start
 )
 
-# --- Expected 8 procedure skills ---
+# --- Expected 6 procedure skills ---
 SKILLS=(
-  bridge-context-sync bridge-eval-generate bridge-external-handoff
-  bridge-external-reintegrate bridge-feedback-process bridge-gate-audit
-  bridge-session-management bridge-slice-plan
+  bridge-context-sync bridge-eval-generate bridge-feedback-process
+  bridge-gate-audit bridge-session-management bridge-slice-plan
 )
 
 # --- Expected 5 agents ---

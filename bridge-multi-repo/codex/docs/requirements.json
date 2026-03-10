@@ -1,0 +1,39 @@
+{
+  "schema": "bridge.v2",
+  "project": {
+    "name": "{{PROJECT_NAME}}",
+    "description": "",
+    "type": "",
+    "version": ""
+  },
+  "workspace": {
+    "topology": "multi-repo",
+    "repos": [
+      {
+        "repo_id": "",
+        "path": "../",
+        "default_branch": "main",
+        "owners": []
+      }
+    ],
+    "cross_repo_contracts": [],
+    "integration_acceptance_tests": []
+  },
+  "scope": {
+    "in_scope": [],
+    "out_of_scope": [],
+    "non_goals": []
+  },
+  "constraints": {
+    "technical": [],
+    "conventions": []
+  },
+  "features": {},
+  "acceptance_tests": {},
+  "user_flows": {},
+  "risks": {},
+  "execution": {
+    "recommended_slices": [],
+    "open_questions": []
+  }
+}

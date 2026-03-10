@@ -1,0 +1,7 @@
+# BRIDGE Multi-Repo Workspace Configuration for Codex
+
+project_doc_max_bytes = 65536
+
+[profiles.bridge]
+model = "gpt-5-codex"
+model_reasoning_summary = "auto"

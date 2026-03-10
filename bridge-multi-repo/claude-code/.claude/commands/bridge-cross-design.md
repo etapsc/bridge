@@ -1,0 +1,36 @@
+---
+description: "Design a cross-repo feature — API contracts, shared schemas, migration strategy"
+---
+
+The user will describe a feature or change that spans multiple repos.
+
+Steps:
+
+1. Load `docs/requirements.json` to understand workspace topology, repos, and existing contracts.
+2. Load `docs/context.json` for current state and repo paths.
+3. Identify impacted repos for this design.
+4. For each impacted repo, inspect relevant source files (API definitions, schema files, shared types).
+5. Produce a cross-repo design document:
+
+```
+### Cross-Repo Design — [Feature/Change Title]
+
+#### Impacted Repos
+- repo-id: what changes and why
+
+#### Contract Changes
+- [API/schema/protocol changes with before/after]
+
+#### Migration Strategy
+- [How to roll out across repos — order matters]
+- [Backward compatibility considerations]
+
+#### Acceptance Criteria
+- [Per-repo criteria]
+- [Integration criteria]
+
+#### Risks
+- [What could break across repo boundaries]
+```
+
+6. Save the design to `docs/contracts/` if the user approves.

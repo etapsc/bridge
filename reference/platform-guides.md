@@ -24,7 +24,7 @@ Both modes are valid. The orchestrator-driven flow is simpler; command-driven gi
 Installs into your project:
 - `.roomodes` — custom mode definitions (audit, evaluate)
 - `.roo/rules-*` — persistent rules per mode (orchestrator, architect, code, debug, audit, evaluate)
-- `.roo/commands/bridge-*.md` — 18 slash commands
+- `.roo/commands/bridge-*.md` — 15 slash commands
 - `docs/` — requirements.json, context.json, decisions.md, human-playbook.md
 
 ### Invocation
@@ -96,7 +96,7 @@ The orchestrator mode delegates to other modes during `/bridge-start`. Each mode
 
 Installs into your project:
 - `.roomodes` — custom mode definitions
-- `.roo/commands/bridge-*.md` — 18 slash commands (self-contained, full prompts)
+- `.roo/commands/bridge-*.md` — 15 slash commands (self-contained, full prompts)
 - `docs/` — requirements.json, context.json, decisions.md, human-playbook.md
 
 ### Differences from Full Pack
@@ -129,9 +129,9 @@ The workflows (greenfield, existing project, session continuity) are identical t
 
 Installs into your project:
 - `CLAUDE.md` — project instructions (methodology, constraints, delegation model)
-- `.claude/commands/bridge-*.md` — 18 slash commands
+- `.claude/commands/bridge-*.md` — 15 slash commands
 - `.claude/agents/bridge-*.md` — 5 subagent definitions
-- `.claude/skills/bridge-*/SKILL.md` — 8 composable skills
+- `.claude/skills/bridge-*/SKILL.md` — 6 composable skills
 - `.claude/rules/` — security.md, methodology.md
 - `.claude/settings.json` — agent configuration
 - `docs/` — requirements.json, context.json, decisions.md, human-playbook.md
@@ -204,8 +204,8 @@ Each subagent gets isolated context — only the relevant JSON slices and file p
 
 Installs into your project:
 - `AGENTS.md` — project instructions (methodology, constraints, role modes)
-- `.agents/skills/bridge-*/SKILL.md` — 18 skill definitions
-- `.agents/procedures/bridge-*.md` — 8 procedure definitions
+- `.agents/skills/bridge-*/SKILL.md` — 15 skill definitions
+- `.agents/procedures/bridge-*.md` — 6 procedure definitions
 - `.codex/config.toml` — Codex configuration
 - `docs/` — requirements.json, context.json, decisions.md, human-playbook.md
 
@@ -269,7 +269,6 @@ Procedures (`.agents/procedures/`) define multi-step workflows that skills can i
 | bridge-scope | `/bridge-scope` | `/bridge-scope` | `$bridge-scope` | Phase 0 | — (existing project) |
 | bridge-feature | `/bridge-feature` | `/bridge-feature` | `$bridge-feature` | Phase 1 | scope |
 | bridge-design | `/bridge-design` | `/bridge-design` | `$bridge-design` | Phase 1 | requirements |
-| bridge-migrate | `/bridge-migrate` | `/bridge-migrate` | `$bridge-migrate` | — | — (v1 → v2.1) |
 | bridge-context-create | `/bridge-context-create` | `/bridge-context-create` | `$bridge-context-create` | Setup | — (existing project) |
 | bridge-context-update | `/bridge-context-update` | `/bridge-context-update` | `$bridge-context-update` | Any | after code changes |
 | bridge-start | `/bridge-start` | `/bridge-start` | `$bridge-start` | Phase 2 | requirements |
@@ -278,6 +277,4 @@ Procedures (`.agents/procedures/`) define multi-step workflows that skills can i
 | bridge-feedback | `/bridge-feedback` | `/bridge-feedback` | `$bridge-feedback` | Phase 5 | eval + human testing |
 | bridge-resume | `/bridge-resume` | `/bridge-resume` | `$bridge-resume` | Session | — (new session) |
 | bridge-end | `/bridge-end` | `/bridge-end` | `$bridge-end` | Session | — (end session) |
-| bridge-offload | `/bridge-offload` | `/bridge-offload` | `$bridge-offload` | External | any slice |
-| bridge-reintegrate | `/bridge-reintegrate` | `/bridge-reintegrate` | `$bridge-reintegrate` | External | offload complete |
 | bridge-advisor | `/bridge-advisor` | `/bridge-advisor` | `$bridge-advisor` | Any | — (strategic review) |

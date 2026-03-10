@@ -1,7 +1,7 @@
 {
   "schema": "context.v1",
   "project": "BRIDGE v2.1 Toolkit",
-  "last_updated": "2026-03-03",
+  "last_updated": "2026-03-09",
   "feature_status": {
     "F01": "done",
     "F02": "done",
@@ -15,7 +15,9 @@
     "F10": "done",
     "F11": "done",
     "F12": "done",
-    "F13": "done"
+    "F13": "done",
+    "F14": "done",
+    "F15": "done"
   },
   "slice_history": [
     {
@@ -89,12 +91,18 @@
       "goal": "Fix Codex skill naming to Title Case + create platform usage guides",
       "status": "done",
       "notes": "Standardized all 18 Codex SKILL.md `name:` fields to Title Case (15 fixed, 3 already correct). Created `reference/platform-guides.md` with step-by-step workflows for RooCode (Full + Standalone), Claude Code, and Codex, plus a command reference matrix. Added Platform Guides section to README.md. Rebuilt all 6 archives."
+    },
+    {
+      "id": "S12",
+      "goal": "Remove obsolete commands (migrate, offload, reintegrate) and skills (external-handoff, external-reintegrate) — update all references",
+      "status": "done",
+      "notes": "3 commands (migrate, offload, reintegrate) and 2 skills (external-handoff, external-reintegrate) removed from all 5 packs as intentional cleanup. Updated: requirements.json (18→15 commands, 8→6 skills), test.sh arrays, README.md, CLAUDE.md, bridge-codex/AGENTS.md, bridge-claude-code/*/CLAUDE.md, reference/BRIDGE-v2.1-methodology.md, reference/platform-guides.md. Added F14 (Controller Pack) and F15 (Multi-Repo Pack) with AT12/AT13 to requirements.json. All 52 smoke tests pass. Archives rebuilt."
     }
   ],
   "current_slice": null,
   "handoff": {
-    "stopped_at": "S11 complete — Codex skill naming standardized to Title Case; platform-guides.md created with per-platform workflows and command matrix",
-    "next_immediate": "Validate Codex `$` discovery shows Title Case names; review platform-guides.md for accuracy",
+    "stopped_at": "Gate PASSED (2026-03-09) — all 15 features verified, 52/52 tests pass, 0 blocking issues, 5 warnings",
+    "next_immediate": "Run /bridge-eval to generate evaluation scenarios, or address warnings (W01-W05) from gate report",
     "watch_out": [
       "Do not reintroduce `SKILL.md` files under `.agents/skills/` for internal procedures, or they will appear in Codex `$` discovery",
       "Do not add `profiles.bridge.web_search` back to config defaults unless verified against the current Codex config schema"
@@ -102,13 +110,60 @@
   },
   "next_slice": null,
   "quality_gates": {
-    "last_run": null,
-    "status": null
+    "last_run": "2026-03-09",
+    "status": "pass"
   },
+  "gate_history": [
+    {
+      "date": "2026-03-08",
+      "result": "fail",
+      "features": ["F01", "F02", "F03", "F04", "F05", "F06", "F07", "F08", "F09", "F10", "F11", "F12", "F13"],
+      "blocking_issues": 11,
+      "warnings": 3,
+      "notes": "3 commands (migrate, offload, reintegrate) and 2 skills (external-handoff, external-reintegrate) deleted from all packs but requirements.json still specifies 18 commands and 8 skills. Documentation, tests, AGENTS.md, CLAUDE.md all contain stale references. New packs (controller, multi-repo) untracked."
+    },
+    {
+      "date": "2026-03-09",
+      "result": "pass",
+      "features": ["F01", "F02", "F03", "F04", "F05", "F06", "F07", "F08", "F09", "F10", "F11", "F12", "F13", "F14", "F15"],
+      "blocking_issues": 0,
+      "warnings": 5,
+      "notes": "All 11 previous blocking issues resolved. 52/52 smoke tests pass. F14 (Controller) and F15 (Multi-Repo) verified against AT12/AT13. No stale references in pack sources. 5 non-blocking warnings: eval in install.sh, methodology doc missing 2 commands, AT10 archive count outdated, AT06 no integration test, shellcheck not installed."
+    }
+  ],
   "commands_to_run": {
     "package": "./package.sh",
     "verify_commands": "for pack in bridge-full bridge-standalone bridge-claude-code bridge-codex bridge-opencode; do echo \"=== $pack ===\"; find $pack -name '*.md' | grep -c command; done",
     "verify_feedback_loop": "grep -rl 'ISSUES REPORTED' bridge-full/ bridge-standalone/ bridge-claude-code/ bridge-codex/ bridge-opencode/ | sort"
   },
-  "discrepancies": []
+  "discrepancies": [
+    {
+      "id": "D01",
+      "date": "2026-03-08",
+      "description": "requirements.json F07 specifies 18 commands (including migrate, offload, reintegrate) but codebase has only 15 commands — those 3 were deleted",
+      "affected": ["F01", "F02", "F03", "F04", "F07", "F11"],
+      "resolution": "resolved in S12 — requirements updated to 15 commands (intentional deletion confirmed by user)"
+    },
+    {
+      "id": "D02",
+      "date": "2026-03-08",
+      "description": "requirements.json scope specifies 8 procedure skills per pack but codebase has only 6 — bridge-external-handoff and bridge-external-reintegrate were deleted",
+      "affected": ["F01", "F03", "F04", "F11"],
+      "resolution": "resolved in S12 — requirements updated to 6 skills"
+    },
+    {
+      "id": "D03",
+      "date": "2026-03-08",
+      "description": "bridge-codex/AGENTS.md lines 123-124 and bridge-claude-code/*/CLAUDE.md lines 83-84 reference deleted skill/procedure files",
+      "affected": ["F03", "F04"],
+      "resolution": "resolved in S12 — stale references removed from all files"
+    },
+    {
+      "id": "D04",
+      "date": "2026-03-08",
+      "description": "New packs bridge-controller/ and bridge-multi-repo/ exist in codebase, built by package.sh, installed by install.sh, but have no feature IDs or acceptance tests in requirements.json",
+      "affected": ["F10"],
+      "resolution": "resolved in S12 — added as F14 (Controller Pack) and F15 (Multi-Repo Pack) with AT12/AT13"
+    }
+  ]
 }

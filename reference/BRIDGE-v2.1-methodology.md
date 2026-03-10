@@ -55,7 +55,6 @@ BRIDGE is a methodology for solo-preneur software development using AI coding ag
 | /bridge-requirements-only | orchestrator | Generate requirements from description |
 | /bridge-scope | orchestrator | Scope a feature/fix for existing project |
 | /bridge-feature | orchestrator | Incremental requirements for existing project |
-| /bridge-migrate | orchestrator | Migrate BRIDGE v1 project to v2.1 |
 | /bridge-start | orchestrator | Start implementation |
 | /bridge-context-create | orchestrator | Create context.json |
 | /bridge-context-update | orchestrator | Sync context.json |
@@ -64,8 +63,6 @@ BRIDGE is a methodology for solo-preneur software development using AI coding ag
 | /bridge-gate | audit | Quality gate |
 | /bridge-eval | evaluate | Generate eval pack |
 | /bridge-feedback | orchestrator | Process feedback |
-| /bridge-offload | orchestrator | External agent handoff |
-| /bridge-reintegrate | orchestrator | Re-integrate external work |
 
 ## Typical Flow
 
