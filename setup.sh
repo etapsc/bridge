@@ -17,7 +17,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_NAME=""
 PACK=""
 OUTPUT_DIR=""
-GITHUB_REPO="${BRIDGE_REPO:-etapsc/bridge-v2}"
+GITHUB_REPO="${BRIDGE_REPO:-etapsc/bridge}"
 VERSION="${BRIDGE_VERSION:-latest}"
 
 # --- Usage ---

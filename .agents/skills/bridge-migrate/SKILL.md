@@ -3,7 +3,7 @@ name: Bridge migrate
 description: Migrate an existing BRIDGE v1 project to BRIDGE v2.1 schema and tooling. Invoke with $bridge-migrate in your prompt.
 ---
 
-You are the orchestrator for the bridge-v2 project. This project was built using BRIDGE v1 and is being upgraded to BRIDGE v2.1.
+You are the orchestrator for the bridge project. This project was built using BRIDGE v1 and is being upgraded to BRIDGE v2.1.
 
 BRIDGE v2.1 = Brainstorm → Requirements → Implementation Design → Develop → Gate → Evaluate
 
@@ -134,7 +134,7 @@ Map existing progress into the v2.1 context schema:
 {
   "schema_version": "context.v1",
   "updated": "[NOW]",
-  "project": { "name": "bridge-v2" },
+  "project": { "name": "bridge" },
   "feature_status": [
     { "feature_id": "F01", "status": "not_started|in_progress|review|done|blocked", "notes": "", "evidence": [] }
   ],

@@ -15,7 +15,7 @@ Create docs/gates-evals/eval-scenarios.md:
 ```markdown
 # Evaluation Scenarios
 Generated: [timestamp]
-Project: bridge-v2
+Project: bridge
 
 ## How to Use
 1. Set up application (see README)

@@ -67,23 +67,23 @@ If your product spans multiple repositories, use a single BRIDGE control plane a
 
 ```bash
 # One-liner — downloads the pack from GitHub Releases
-curl -fsSL https://raw.githubusercontent.com/etapsc/bridge-v2/main/setup.sh | bash -s -- \
+curl -fsSL https://raw.githubusercontent.com/etapsc/bridge/main/setup.sh | bash -s -- \
   --pack claude-code --name "My Project"
 
 # With a specific version
-curl -fsSL https://raw.githubusercontent.com/etapsc/bridge-v2/main/setup.sh | bash -s -- \
+curl -fsSL https://raw.githubusercontent.com/etapsc/bridge/main/setup.sh | bash -s -- \
   --pack claude-code --name "My Project" --version v2.1.0
 
 # With a custom output directory
-curl -fsSL https://raw.githubusercontent.com/etapsc/bridge-v2/main/setup.sh | bash -s -- \
+curl -fsSL https://raw.githubusercontent.com/etapsc/bridge/main/setup.sh | bash -s -- \
   --pack full --name "My Project" -o ~/projects
 ```
 
 ## Setup (from cloned repo)
 
 ```bash
-git clone https://github.com/etapsc/bridge-v2.git
-cd bridge-v2
+git clone https://github.com/etapsc/bridge.git
+cd bridge
 
 # Interactive
 ./setup.sh

@@ -15,7 +15,7 @@ set -euo pipefail
 # ============================================================
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-GITHUB_REPO="${BRIDGE_REPO:-etapsc/bridge-v2}"
+GITHUB_REPO="${BRIDGE_REPO:-etapsc/bridge}"
 VERSION="${BRIDGE_VERSION:-latest}"
 
 # --- Colors (if terminal supports them) ---

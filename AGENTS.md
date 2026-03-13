@@ -1,4 +1,4 @@
-# BRIDGE v2.1 — bridge-v2
+# BRIDGE v2.1 — bridge
 
 ## Methodology
 

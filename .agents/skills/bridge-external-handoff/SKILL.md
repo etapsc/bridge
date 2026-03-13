@@ -21,7 +21,7 @@ From requirements.json and context.json, extract ONLY:
 ```markdown
 # External Agent Task
 Generated: [timestamp]
-Project: bridge-v2
+Project: bridge
 Slice: [Sxx]
 
 ## Objective

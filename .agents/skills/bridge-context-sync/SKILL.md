@@ -16,7 +16,7 @@ description: Create or update context.json to reflect current code reality. Use 
 {
   "schema_version": "context.v1",
   "updated": "[timestamp]",
-  "project": { "name": "bridge-v2" },
+  "project": { "name": "bridge" },
   "feature_status": [
     { "feature_id": "F01", "status": "not_started|in_progress|done|blocked", "notes": "", "evidence": [] }
   ],
