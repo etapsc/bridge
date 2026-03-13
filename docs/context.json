@@ -1,7 +1,7 @@
 {
   "schema": "context.v1",
   "project": "BRIDGE Toolkit",
-  "last_updated": "2026-03-12",
+  "last_updated": "2026-03-13",
   "feature_status": {
     "F01": "done",
     "F02": "done",
@@ -188,7 +188,8 @@
   ],
   "commands_to_run": {
     "test": "bash test.sh",
-    "e2e": "for f in tests/e2e/test-setup-packs.sh tests/e2e/test-pack-consistency.sh tests/e2e/test-advanced-packs.sh tests/e2e/test-workflow-content.sh; do bash \"$f\"; done",
+    "e2e": "for f in tests/e2e/test-setup-packs.sh tests/e2e/test-pack-consistency.sh tests/e2e/test-advanced-packs.sh tests/e2e/test-workflow-content.sh tests/e2e/test-v3-binary.sh; do bash \"$f\"; done",
+    "e2e_v3": "bash tests/e2e/test-v3-binary.sh",
     "eval_validator": "bash tests/e2e/validate-eval-scenarios.sh",
     "package": "./package.sh",
     "verify_commands": "for pack in bridge-full bridge-standalone bridge-claude-code bridge-codex bridge-opencode; do echo \"=== $pack ===\"; find $pack -name '*.md' | grep -c command; done",
@@ -210,6 +211,14 @@
       "e2e_test_assertions": 114,
       "awaiting_feedback": true,
       "notes": "Refreshed evaluation pack after the Claude pack flattening and multi-repo doc cleanup. 23 manual scenarios now target the canonical root `bridge-claude-code` layout and 9 release archives. E2E suite results: test-setup-packs.sh (32 assertions), test-pack-consistency.sh (24 assertions), test-advanced-packs.sh (37 assertions), test-workflow-content.sh (21 assertions). All 114 assertions pass."
+    },
+    {
+      "date": "2026-03-13",
+      "scenarios_generated": 14,
+      "e2e_tests_generated": 1,
+      "e2e_test_assertions": 70,
+      "awaiting_feedback": true,
+      "notes": "v3 evaluation pack for F16-F19. 14 new manual scenarios (24-37) covering Go TUI binary (bridge new, add, customize, error handling), domain specializations (7 specs, content quality), personality packs (3 profiles, vibe injection, personality swap), cross-platform distribution (goreleaser, 5 cross-compile targets), and .bridge.json lifecycle tracking. 1 new E2E test script: test-v3-binary.sh (70 assertions). All 70 assertions pass. Cumulative totals: 37 scenarios, 5 E2E test scripts, 184 assertions."
     }
   ],
   "discrepancies": [

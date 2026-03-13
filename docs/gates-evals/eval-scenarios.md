@@ -1,8 +1,8 @@
 # Evaluation Scenarios
 
-Generated: 2026-03-10
-Project: BRIDGE v2.1 Toolkit
-Gate Status: PASS (2026-03-10, 45/45 smoke tests, 114/114 E2E assertions, 1 warning)
+Generated: 2026-03-13
+Project: BRIDGE v3 Toolkit
+Gate Status: PASS (2026-03-13, F16-F19 — 16 Go tests, 45 smoke tests, 82 E2E assertions, 5 cross-compile targets)
 
 ## How to Use
 
@@ -747,10 +747,549 @@ Prerequisites:
 
 ---
 
+---
+
+# BRIDGE v3 Scenarios (F16-F19)
+
+Prerequisites for Scenarios 24-34:
+- Go 1.21+ installed (`go version`)
+- The BRIDGE repo cloned locally with Go source under cmd/bridge/ and internal/
+- For binary tests: build first with `go build -o /tmp/bridge-bin ./cmd/bridge/`
+- For TUI test (Scenario 30): a real TTY terminal
+
+---
+
+## Scenario 24: Go Binary Build and Help (F16, AT25)
+
+**Goal:** Verify the bridge binary compiles, runs, and exposes all subcommands.
+
+**Preconditions:** Terminal in the BRIDGE repo root directory. Go installed.
+
+### Steps
+
+1. Build the binary: `go build -o /tmp/bridge-bin ./cmd/bridge/`
+   - Expected: Exits 0. Binary created at /tmp/bridge-bin.
+2. Run help: `/tmp/bridge-bin --help`
+   - Expected: Shows "BRIDGE v3" description and lists subcommands: new, add, orchestrator, customize, pack.
+3. Check version: `/tmp/bridge-bin --version`
+   - Expected: Prints a version string.
+4. Verify each subcommand has help:
+   ```
+   for cmd in new add orchestrator customize pack; do
+     /tmp/bridge-bin $cmd --help >/dev/null 2>&1 && echo "OK: $cmd" || echo "FAIL: $cmd"
+   done
+   ```
+   - Expected: All OK.
+
+### Checklist
+- [ ] Binary compiles without errors
+- [ ] --help shows all 5 subcommands (new, add, orchestrator, customize, pack)
+- [ ] --version prints a version string
+- [ ] Each subcommand accepts --help
+
+---
+
+## Scenario 25: bridge new -- Project Creation (F16, AT14, UF07)
+
+**Goal:** Verify `bridge new` creates a project with correct structure, same as setup.sh.
+
+**Preconditions:** Binary built at /tmp/bridge-bin.
+
+### Steps
+
+1. Create a project:
+   `/tmp/bridge-bin new --name "V3 Test" --pack claude-code --output /tmp/bridge-v3-eval`
+   - Expected: Prints setup summary. Creates /tmp/bridge-v3-eval/v3-test/.
+2. Check CLAUDE.md: `head -3 /tmp/bridge-v3-eval/v3-test/CLAUDE.md`
+   - Expected: Contains "V3 Test" in header.
+3. Check commands: `ls /tmp/bridge-v3-eval/v3-test/.claude/commands/ | wc -l`
+   - Expected: 15 command files.
+4. Check agents: `ls /tmp/bridge-v3-eval/v3-test/.claude/agents/ | wc -l`
+   - Expected: 5 agent files.
+5. Check skills: `ls /tmp/bridge-v3-eval/v3-test/.claude/skills/ | wc -l`
+   - Expected: 6 skill directories.
+6. Check placeholder replacement: `grep -r '{{PROJECT_NAME}}' /tmp/bridge-v3-eval/v3-test/`
+   - Expected: No output (all replaced).
+7. Check docs: `ls /tmp/bridge-v3-eval/v3-test/docs/`
+   - Expected: context.json, decisions.md, human-playbook.md, requirements.json.
+8. Check .bridge.json: `cat /tmp/bridge-v3-eval/v3-test/.bridge.json`
+   - Expected: JSON with version "3.0", pack "claude-code", personality "balanced".
+
+### Checklist
+- [ ] bridge new exits successfully
+- [ ] Project directory created with correct slug
+- [ ] CLAUDE.md has project name
+- [ ] 15 commands, 5 agents, 6 skills present
+- [ ] No unreplaced {{PROJECT_NAME}} placeholders
+- [ ] docs/ templates present
+- [ ] .bridge.json created with correct defaults
+
+---
+
+## Scenario 26: bridge new -- Codex Pack (F16, AT14)
+
+**Goal:** Verify `bridge new` works with codex pack.
+
+**Preconditions:** Binary built at /tmp/bridge-bin.
+
+### Steps
+
+1. Create: `/tmp/bridge-bin new --name "Codex V3" --pack codex --output /tmp/bridge-v3-eval`
+   - Expected: Creates /tmp/bridge-v3-eval/codex-v3/.
+2. Check AGENTS.md: `head -3 /tmp/bridge-v3-eval/codex-v3/AGENTS.md`
+   - Expected: Contains "Codex V3".
+3. Check skills: `ls /tmp/bridge-v3-eval/codex-v3/.agents/skills/ | wc -l`
+   - Expected: 15 skill directories.
+4. Check procedures: `ls /tmp/bridge-v3-eval/codex-v3/.agents/procedures/ | wc -l`
+   - Expected: 6 procedure files.
+5. Check .bridge.json: `cat /tmp/bridge-v3-eval/codex-v3/.bridge.json`
+   - Expected: pack "codex".
+
+### Checklist
+- [ ] Codex project created successfully
+- [ ] AGENTS.md personalized
+- [ ] 15 skills, 6 procedures present
+- [ ] .bridge.json tracks pack type
+
+---
+
+## Scenario 27: bridge new with Personality (F16, F18, AT16)
+
+**Goal:** Verify `bridge new --personality strict` injects vibe lines into agent definitions.
+
+**Preconditions:** Binary built at /tmp/bridge-bin.
+
+### Steps
+
+1. Create with strict personality:
+   `/tmp/bridge-bin new --name "Strict Project" --pack claude-code --personality strict --output /tmp/bridge-v3-eval`
+   - Expected: Output shows "Personality: strict".
+2. Check .bridge.json personality:
+   `cat /tmp/bridge-v3-eval/strict-project/.bridge.json | grep personality`
+   - Expected: "personality": "strict"
+3. Check vibe injection in an agent file:
+   `grep -i 'vibe\|skeptical\|evidence\|rigorous' /tmp/bridge-v3-eval/strict-project/.claude/agents/bridge-architect.md`
+   - Expected: Strict vibe line present (e.g., "Challenges every abstraction").
+4. Check vibe in another agent:
+   `grep -i 'vibe\|edge case\|shortcut\|TODO' /tmp/bridge-v3-eval/strict-project/.claude/agents/bridge-coder.md`
+   - Expected: Strict coder vibe present.
+5. Compare with balanced (no markers should remain empty):
+   `grep -c 'BRIDGE-PERSONALITY' /tmp/bridge-v3-eval/strict-project/.claude/agents/bridge-architect.md`
+   - Expected: Markers present (2 -- start and end) with vibe content between them.
+
+### Checklist
+- [ ] Personality printed in setup summary
+- [ ] .bridge.json records "strict"
+- [ ] Architect agent has strict vibe line
+- [ ] Coder agent has strict vibe line
+- [ ] Personality markers present in agent files
+
+---
+
+## Scenario 28: bridge new with Specializations (F16, F17, AT18, AT24)
+
+**Goal:** Verify `bridge new --spec frontend --spec backend` copies specialization files into the project.
+
+**Preconditions:** Binary built at /tmp/bridge-bin.
+
+### Steps
+
+1. Create with specs:
+   `/tmp/bridge-bin new --name "Spec Project" --pack claude-code --spec frontend --spec backend --output /tmp/bridge-v3-eval`
+   - Expected: Output shows "Specs: [frontend backend]".
+2. Check specialization directories exist:
+   ```
+   ls /tmp/bridge-v3-eval/spec-project/.claude/skills/bridge-spec-frontend/SKILL.md
+   ls /tmp/bridge-v3-eval/spec-project/.claude/skills/bridge-spec-backend/SKILL.md
+   ```
+   - Expected: Both files exist.
+3. Check specialization content:
+   `head -5 /tmp/bridge-v3-eval/spec-project/.claude/skills/bridge-spec-frontend/SKILL.md`
+   - Expected: SKILL.md with "Frontend Specialization" or similar.
+4. Check .bridge.json:
+   `cat /tmp/bridge-v3-eval/spec-project/.bridge.json | grep specializations`
+   - Expected: ["frontend", "backend"]
+5. Verify specialization contains domain-specific content:
+   `grep -i 'accessibility\|component\|responsive' /tmp/bridge-v3-eval/spec-project/.claude/skills/bridge-spec-frontend/SKILL.md`
+   - Expected: Frontend-specific checklists.
+
+### Checklist
+- [ ] Specs printed in setup summary
+- [ ] bridge-spec-frontend/SKILL.md exists in project skills
+- [ ] bridge-spec-backend/SKILL.md exists in project skills
+- [ ] Specializations contain domain-specific checklists
+- [ ] .bridge.json tracks both specializations
+
+---
+
+## Scenario 29: bridge add -- Existing Project (F16, AT15)
+
+**Goal:** Verify `bridge add` installs BRIDGE into an existing directory without overwriting protected content.
+
+**Preconditions:** Binary built at /tmp/bridge-bin.
+
+### Steps
+
+1. Create a fake existing project:
+   ```
+   mkdir -p /tmp/bridge-v3-eval/existing-project/src
+   echo "existing code" > /tmp/bridge-v3-eval/existing-project/src/main.go
+   echo "existing readme" > /tmp/bridge-v3-eval/existing-project/README.md
+   ```
+2. Add BRIDGE:
+   `/tmp/bridge-bin add --name "Existing" --pack claude-code --target /tmp/bridge-v3-eval/existing-project`
+   - Expected: Installs BRIDGE files.
+3. Verify existing files preserved:
+   `cat /tmp/bridge-v3-eval/existing-project/src/main.go`
+   - Expected: "existing code" (unchanged).
+   `cat /tmp/bridge-v3-eval/existing-project/README.md`
+   - Expected: "existing readme" (unchanged).
+4. Verify BRIDGE files added:
+   `ls /tmp/bridge-v3-eval/existing-project/CLAUDE.md`
+   - Expected: File exists.
+   `ls /tmp/bridge-v3-eval/existing-project/.claude/commands/ | wc -l`
+   - Expected: 15 command files.
+5. Verify .bridge.json created:
+   `cat /tmp/bridge-v3-eval/existing-project/.bridge.json`
+   - Expected: JSON with pack and personality fields.
+
+### Checklist
+- [ ] bridge add exits successfully
+- [ ] Existing files (src/main.go, README.md) not overwritten
+- [ ] CLAUDE.md and .claude/ structure added
+- [ ] 15 commands present
+- [ ] .bridge.json created
+
+---
+
+## Scenario 30: bridge Interactive TUI (F16, AT20, UF07)
+
+**Goal:** Verify `bridge` with no args launches an interactive TUI.
+
+**Preconditions:** Binary built at /tmp/bridge-bin. Real TTY terminal.
+
+### Steps
+
+1. Run with no args: `/tmp/bridge-bin`
+   - Expected: An interactive menu appears with options: New project, Add to existing, Orchestrator, Customize, Pack.
+2. Select "New project" (if the TUI allows).
+   - Expected: A form appears asking for project name, pack, personality, specializations.
+3. Press Ctrl+C or Escape to exit without completing.
+   - Expected: Exits cleanly, no crash.
+
+### Checklist
+- [ ] TUI menu appears with 5 action options
+- [ ] Selecting an action shows the relevant form
+- [ ] Cancellation exits cleanly
+
+---
+
+## Scenario 31: bridge customize -- Personality Swap (F16, F18, AT17, UF08)
+
+**Goal:** Verify `bridge customize --personality mentoring` swaps personality in an existing project.
+
+**Preconditions:** A project from Scenario 25 at /tmp/bridge-v3-eval/v3-test/ (balanced personality).
+
+### Steps
+
+1. Check current personality:
+   `/tmp/bridge-bin customize --list --target /tmp/bridge-v3-eval/v3-test`
+   - Expected: Shows personality "balanced".
+2. Swap to mentoring:
+   `/tmp/bridge-bin customize --personality mentoring --target /tmp/bridge-v3-eval/v3-test`
+   - Expected: Exits successfully. Prints confirmation.
+3. Check .bridge.json updated:
+   `cat /tmp/bridge-v3-eval/v3-test/.bridge.json | grep personality`
+   - Expected: "personality": "mentoring"
+4. Check vibe injection:
+   `grep -i 'vibe\|mentor\|teaching\|learning\|guidance' /tmp/bridge-v3-eval/v3-test/.claude/agents/bridge-architect.md`
+   - Expected: Mentoring vibe line present.
+5. Verify --list reflects change:
+   `/tmp/bridge-bin customize --list --target /tmp/bridge-v3-eval/v3-test`
+   - Expected: Shows personality "mentoring".
+
+### Checklist
+- [ ] --list shows current personality
+- [ ] Personality swap exits successfully
+- [ ] .bridge.json updated to "mentoring"
+- [ ] Agent files contain mentoring vibe lines
+- [ ] --list reflects the new personality
+
+---
+
+## Scenario 32: bridge customize -- Add/Remove Specializations (F16, F17, AT18, AT19, UF08)
+
+**Goal:** Verify adding and removing specializations via bridge customize.
+
+**Preconditions:** A project from Scenario 25 at /tmp/bridge-v3-eval/v3-test/ (no specializations).
+
+### Steps
+
+1. Add specializations:
+   `/tmp/bridge-bin customize --add-spec frontend --add-spec security --target /tmp/bridge-v3-eval/v3-test`
+   - Expected: Exits successfully. Copies spec files.
+2. Verify files:
+   ```
+   ls /tmp/bridge-v3-eval/v3-test/.claude/skills/bridge-spec-frontend/SKILL.md
+   ls /tmp/bridge-v3-eval/v3-test/.claude/skills/bridge-spec-security/SKILL.md
+   ```
+   - Expected: Both exist.
+3. Check .bridge.json:
+   `cat /tmp/bridge-v3-eval/v3-test/.bridge.json | grep -A2 specializations`
+   - Expected: ["frontend", "security"]
+4. Remove one specialization:
+   `/tmp/bridge-bin customize --remove-spec frontend --target /tmp/bridge-v3-eval/v3-test`
+   - Expected: Exits successfully.
+5. Verify removal:
+   `ls /tmp/bridge-v3-eval/v3-test/.claude/skills/bridge-spec-frontend/ 2>/dev/null && echo "EXISTS" || echo "REMOVED"`
+   - Expected: "REMOVED"
+6. Check .bridge.json updated:
+   `cat /tmp/bridge-v3-eval/v3-test/.bridge.json | grep -A2 specializations`
+   - Expected: ["security"] (frontend removed).
+
+### Checklist
+- [ ] --add-spec copies SKILL.md files to project
+- [ ] .bridge.json tracks added specializations
+- [ ] --remove-spec removes the specialization directory
+- [ ] .bridge.json updated after removal
+- [ ] Remaining specialization unaffected
+
+---
+
+## Scenario 33: Specialization Content Quality (F17, AT24)
+
+**Goal:** Verify all 7 specialization skill files are well-formed and contain domain-specific content.
+
+**Preconditions:** Terminal in the BRIDGE repo root directory.
+
+### Steps
+
+1. Check all 7 specialization directories exist:
+   ```
+   for spec in frontend backend api data infra mobile security; do
+     [ -f "specializations/${spec}/SKILL.md" ] && echo "OK: $spec" || echo "MISSING: $spec"
+   done
+   ```
+   - Expected: All 7 OK.
+2. Verify SKILL.md format (frontmatter with name and description):
+   ```
+   for spec in frontend backend api data infra mobile security; do
+     grep -q '^---' "specializations/${spec}/SKILL.md" && echo "OK: $spec has frontmatter" || echo "FAIL: $spec"
+   done
+   ```
+   - Expected: All have YAML frontmatter.
+3. Spot-check domain specificity:
+   - `grep -i 'accessibility\|component\|CSS' specializations/frontend/SKILL.md | head -3`
+     - Expected: Frontend-specific terms.
+   - `grep -i 'endpoint\|REST\|GraphQL\|versioning' specializations/api/SKILL.md | head -3`
+     - Expected: API-specific terms.
+   - `grep -i 'OWASP\|authentication\|authorization\|vulnerability' specializations/security/SKILL.md | head -3`
+     - Expected: Security-specific terms.
+   - `grep -i 'pipeline\|ETL\|schema\|migration' specializations/data/SKILL.md | head -3`
+     - Expected: Data-specific terms.
+4. Verify each file has substantial content:
+   ```
+   for spec in frontend backend api data infra mobile security; do
+     lines=$(wc -l < "specializations/${spec}/SKILL.md")
+     [ "$lines" -gt 30 ] && echo "OK: $spec ($lines lines)" || echo "SHORT: $spec ($lines lines)"
+   done
+   ```
+   - Expected: All > 30 lines.
+
+### Checklist
+- [ ] All 7 specialization directories exist with SKILL.md
+- [ ] SKILL.md files have valid frontmatter (name, description)
+- [ ] Frontend covers component architecture, accessibility
+- [ ] API covers endpoints, versioning, REST/GraphQL
+- [ ] Security covers OWASP, auth, vulnerabilities
+- [ ] Data covers pipelines, schemas, ETL
+- [ ] All files are substantial (30+ lines)
+
+---
+
+## Scenario 34: Personality Profile Quality (F18, AT23)
+
+**Goal:** Verify all 3 personality profiles are valid JSON with 8 vibe keys.
+
+**Preconditions:** Terminal in the BRIDGE repo root directory.
+
+### Steps
+
+1. Check all 3 profiles exist:
+   ```
+   for p in strict balanced mentoring; do
+     [ -f "profiles/${p}.json" ] && echo "OK: $p" || echo "MISSING: $p"
+   done
+   ```
+   - Expected: All 3 OK.
+2. Validate JSON:
+   ```
+   for p in strict balanced mentoring; do
+     python3 -c "import json; json.load(open('profiles/${p}.json'))" 2>/dev/null && echo "VALID: $p" || echo "INVALID: $p"
+   done
+   ```
+   - Expected: All VALID.
+3. Check 8 vibe keys in each profile:
+   ```
+   for p in strict balanced mentoring; do
+     keys=$(python3 -c "import json; d=json.load(open('profiles/${p}.json')); print(len(d.get('vibes',{})))")
+     [ "$keys" -eq 8 ] && echo "OK: $p has $keys vibes" || echo "FAIL: $p has $keys vibes"
+   done
+   ```
+   - Expected: All have exactly 8 vibes (architect, coder, debugger, auditor, evaluator, advisor, brainstorm, orchestrator).
+4. Verify vibe key names match expected roles:
+   ```
+   python3 -c "
+   import json
+   expected = {'architect','coder','debugger','auditor','evaluator','advisor','brainstorm','orchestrator'}
+   for p in ['strict','balanced','mentoring']:
+     d = json.load(open(f'profiles/{p}.json'))
+     actual = set(d.get('vibes',{}).keys())
+     if actual == expected:
+       print(f'OK: {p}')
+     else:
+       print(f'MISMATCH: {p} — missing={expected-actual}, extra={actual-expected}')
+   "
+   ```
+   - Expected: All OK.
+5. Verify vibes are non-empty strings:
+   ```
+   python3 -c "
+   import json
+   for p in ['strict','balanced','mentoring']:
+     d = json.load(open(f'profiles/{p}.json'))
+     empty = [k for k,v in d.get('vibes',{}).items() if not v.strip()]
+     if empty:
+       print(f'EMPTY VIBES in {p}: {empty}')
+     else:
+       print(f'OK: {p} — all vibes are non-empty')
+   "
+   ```
+   - Expected: All OK.
+
+### Checklist
+- [ ] All 3 profile files exist (strict, balanced, mentoring)
+- [ ] All parse as valid JSON
+- [ ] Each has exactly 8 vibe keys
+- [ ] Vibe keys match expected role names
+- [ ] All vibes are non-empty strings
+
+---
+
+## Scenario 35: Cross-Platform Build (F19, AT25)
+
+**Goal:** Verify goreleaser config cross-compiles for all target platforms.
+
+**Preconditions:** Terminal in the BRIDGE repo root directory. Go installed.
+
+### Steps
+
+1. Check .goreleaser.yml exists:
+   `cat .goreleaser.yml | head -30`
+   - Expected: Project name "bridge", builds section with goos/goarch.
+2. Verify target platforms in config:
+   `grep -A10 'goos:' .goreleaser.yml`
+   - Expected: linux, darwin, windows.
+   `grep -A5 'goarch:' .goreleaser.yml`
+   - Expected: amd64, arm64.
+3. Verify windows/arm64 is excluded:
+   `grep -A2 'ignore:' .goreleaser.yml`
+   - Expected: windows + arm64 exclusion.
+4. Cross-compile manually for each target:
+   ```
+   for goos in linux darwin; do
+     for goarch in amd64 arm64; do
+       GOOS=$goos GOARCH=$goarch go build -o /dev/null ./cmd/bridge/ && echo "OK: $goos/$goarch" || echo "FAIL: $goos/$goarch"
+     done
+   done
+   GOOS=windows GOARCH=amd64 go build -o /dev/null ./cmd/bridge/ && echo "OK: windows/amd64" || echo "FAIL: windows/amd64"
+   ```
+   - Expected: All 5 OK.
+5. Verify archives include profiles and specializations:
+   `grep -A5 'files:' .goreleaser.yml`
+   - Expected: profiles/* and specializations/* listed.
+
+### Checklist
+- [ ] .goreleaser.yml exists with correct project name
+- [ ] linux/amd64, linux/arm64, darwin/amd64, darwin/arm64, windows/amd64 targets defined
+- [ ] windows/arm64 excluded
+- [ ] All 5 cross-compile targets build successfully
+- [ ] Archives configured to include profiles/ and specializations/
+
+---
+
+## Scenario 36: bridge new -- Error Handling (F16)
+
+**Goal:** Verify the bridge binary handles invalid input gracefully.
+
+**Preconditions:** Binary built at /tmp/bridge-bin.
+
+### Steps
+
+1. Missing required flags:
+   `/tmp/bridge-bin new 2>&1; echo "exit: $?"`
+   - Expected: Error about --name being required. Non-zero exit.
+2. Invalid pack name:
+   `/tmp/bridge-bin new --name "Test" --pack invalid-pack 2>&1; echo "exit: $?"`
+   - Expected: Error about invalid pack. Non-zero exit.
+3. Invalid personality:
+   `/tmp/bridge-bin new --name "Test" --pack claude-code --personality aggressive 2>&1; echo "exit: $?"`
+   - Expected: Error about invalid personality. Non-zero exit.
+4. Directory already exists:
+   `/tmp/bridge-bin new --name "V3 Test" --pack claude-code --output /tmp/bridge-v3-eval 2>&1; echo "exit: $?"`
+   - Expected: Error about directory already existing. Non-zero exit.
+
+### Checklist
+- [ ] Missing --name produces clear error
+- [ ] Invalid pack produces clear error with valid options
+- [ ] Invalid personality produces clear error with valid options
+- [ ] Existing directory produces clear error
+- [ ] All error cases exit non-zero
+
+---
+
+## Scenario 37: .bridge.json Config Tracking (F16, F18, AT23)
+
+**Goal:** Verify .bridge.json accurately tracks all configuration through lifecycle changes.
+
+**Preconditions:** Binary built at /tmp/bridge-bin.
+
+### Steps
+
+1. Create project:
+   `/tmp/bridge-bin new --name "Config Test" --pack full --personality strict --spec api --output /tmp/bridge-v3-eval`
+2. Check initial state:
+   `cat /tmp/bridge-v3-eval/config-test/.bridge.json`
+   - Expected: version "3.0", pack "full", personality "strict", specializations ["api"].
+3. Change personality:
+   `/tmp/bridge-bin customize --personality mentoring --target /tmp/bridge-v3-eval/config-test`
+4. Check personality updated:
+   `cat /tmp/bridge-v3-eval/config-test/.bridge.json | grep personality`
+   - Expected: "personality": "mentoring"
+5. Add spec:
+   `/tmp/bridge-bin customize --add-spec security --target /tmp/bridge-v3-eval/config-test`
+6. Check specs updated:
+   `cat /tmp/bridge-v3-eval/config-test/.bridge.json | grep -A3 specializations`
+   - Expected: ["api", "security"]
+7. Remove spec:
+   `/tmp/bridge-bin customize --remove-spec api --target /tmp/bridge-v3-eval/config-test`
+8. Check final state:
+   `cat /tmp/bridge-v3-eval/config-test/.bridge.json`
+   - Expected: version "3.0", pack "full", personality "mentoring", specializations ["security"].
+
+### Checklist
+- [ ] Initial .bridge.json has all 4 fields correct
+- [ ] Personality change persists to .bridge.json
+- [ ] Add-spec appends to specializations array
+- [ ] Remove-spec removes from specializations array
+- [ ] Pack and version unchanged through customizations
+
+---
+
 ## Cleanup
 
 After all scenarios are complete, clean up test artifacts:
 
 ```bash
-rm -rf /tmp/bridge-eval /tmp/bridge-live /tmp/bridge-pkg-test
+rm -rf /tmp/bridge-eval /tmp/bridge-live /tmp/bridge-pkg-test /tmp/bridge-v3-eval /tmp/bridge-bin
 ```
