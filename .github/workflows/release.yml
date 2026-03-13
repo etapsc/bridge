@@ -49,6 +49,7 @@ jobs:
             bridge-multi-repo-claude-code.tar.gz
             bridge-multi-repo-codex.tar.gz
             bridge-dual-agent.tar.gz
+            bridge.sh
             setup.sh
             add-bridge.sh
             install-orchestrators.sh
