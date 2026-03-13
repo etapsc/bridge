@@ -1,10 +1,10 @@
 {
   "schema": "bridge.v2",
   "project": {
-    "name": "BRIDGE v2.1 Toolkit",
-    "description": "Distributable methodology toolkit for AI-assisted software development. Provides structured workflows (Brainstorm → Requirements → Implementation Design → Develop → Gate → Evaluate) across multiple AI coding platforms.",
+    "name": "BRIDGE Toolkit",
+    "description": "Distributable methodology toolkit for AI-assisted software development. Provides structured workflows (Brainstorm → Requirements → Implementation Design → Develop → Gate → Evaluate) across multiple AI coding platforms. v3 adds an interactive Go TUI binary, domain specializations, and personality packs.",
     "type": "developer-tooling",
-    "version": "2.1"
+    "version": "3.0"
   },
   "scope": {
     "in_scope": [
@@ -12,31 +12,35 @@
       "Advanced orchestrator packs: Controller and Multi-Repo",
       "15 slash commands consistent across all packs",
       "6 procedure skills per pack (adapted to pack architecture)",
-      "Interactive setup.sh for project initialization",
-      "install-orchestrators.sh for Controller and Multi-Repo setup",
+      "Go TUI binary (bridge) replacing all shell scripts: new, add, orchestrator, customize, pack",
+      "Domain specialization skills: frontend, backend, api, data, infra, mobile, security",
+      "Personality packs: strict, balanced, mentoring — project-wide agent tone overlay",
       "reference/BRIDGE-v2.1-methodology.md comprehensive methodology doc",
       "README.md with installation and usage instructions",
-      "Packaging script (package.sh) for rebuilding release tar.gz archives from source folders",
-      "docs/ templates: requirements.json, context.json, decisions.md, human-playbook.md"
+      "docs/ templates: requirements.json, context.json, decisions.md, human-playbook.md",
+      "Cross-platform distribution: Linux, macOS, Windows binaries via goreleaser"
     ],
     "out_of_scope": [
       "GUI or web interface",
-      "Package manager distribution (npm, pip, brew)",
-      "Auto-update mechanism",
-      "IDE plugins or extensions beyond supported platforms"
+      "Auto-update mechanism (beyond bridge update to refresh cache)",
+      "IDE plugins or extensions beyond supported platforms",
+      "Language-specific specializations (models already know language idioms)"
     ],
     "non_goals": [
       "Replace the AI coding agent itself — BRIDGE is a methodology layer, not an agent",
-      "Support every possible AI coding tool — focus on RooCode, Claude Code, Codex, OpenCode"
+      "Support every possible AI coding tool — focus on RooCode, Claude Code, Codex, OpenCode",
+      "Become a 100-agent catalog — stay lean with 5 core agents augmented by composable specializations"
     ]
   },
   "constraints": {
     "technical": [
-      "Shell scripts must be POSIX-compatible (bash)",
-      "No runtime dependencies beyond tar, gzip, sed, bash",
-      "All packs self-contained after setup.sh runs",
-      "{{PROJECT_NAME}} placeholder replaced at init time by setup.sh",
-      "Distribution via tar.gz only (no zip)"
+      "Go binary must cross-compile for linux/amd64, linux/arm64, darwin/amd64, darwin/arm64, windows/amd64",
+      "TUI uses Charm.sh ecosystem: bubbletea, huh, lipgloss",
+      "Thin binary — packs downloaded from GitHub Releases, cached in ~/.bridge/cache/",
+      "All packs self-contained after bridge new/add runs",
+      "{{PROJECT_NAME}} placeholder replaced at init time",
+      "Pack archives remain tar.gz format",
+      "Shell scripts (setup.sh, add-bridge.sh, install-orchestrators.sh) kept for backward compatibility but no longer primary interface"
     ],
     "conventions": [
       "Stable IDs: Fxx (features), ATxx (acceptance tests), Sxx (slices), UFxx (user flows), Rxx (risks)",
@@ -136,6 +140,30 @@
       "priority": "should",
       "description": "Cross-repo workspace orchestrator with two variants (claude-code and codex). 12 commands including 4 cross-repo specific (bridge-cross-design, bridge-cross-review, bridge-cross-sync, bridge-repo-status) plus adapted standard workflow commands. Manages coordinated branching, contracts, and two-phase gates across repos.",
       "status": "done"
+    },
+    "F16": {
+      "title": "Go TUI Binary",
+      "priority": "must",
+      "description": "Single bridge binary built in Go with Charm.sh TUI. Subcommands: new (create project), add (add to existing), orchestrator (install controller/multi-repo), customize (modify personality/specs), pack (build archives). Interactive TUI when run without flags, flag mode for CI. Thin binary downloads packs from GitHub Releases and caches in ~/.bridge/cache/.",
+      "status": "planned"
+    },
+    "F17": {
+      "title": "Domain Specializations",
+      "priority": "must",
+      "description": "Composable domain skill files (frontend, backend, api, data, infra, mobile, security) containing stack-specific checklists, anti-patterns, and conventions. Selected during setup or added post-install via bridge customize. Copied into project skill directory. Multiple can be active simultaneously.",
+      "status": "planned"
+    },
+    "F18": {
+      "title": "Personality Packs",
+      "priority": "must",
+      "description": "Three project-wide behavioral profiles (strict, balanced, mentoring) applied as thin overlays to all agents, roles, and orchestrator. Personality vibe lines injected between markers in agent files. Selected during setup, changeable post-install via bridge customize. Affects all 5 agents plus advisor, brainstorm roles, and orchestrator tone.",
+      "status": "planned"
+    },
+    "F19": {
+      "title": "Cross-Platform Distribution",
+      "priority": "should",
+      "description": "goreleaser config for automated multi-platform builds. GitHub Release artifacts for linux/amd64, linux/arm64, darwin/amd64, darwin/arm64, windows/amd64. Homebrew tap formula. Install one-liner for Linux/macOS.",
+      "status": "planned"
     }
   },
   "acceptance_tests": {
@@ -151,7 +179,19 @@
     "AT10": "package.sh rebuilds all release tar.gz archives from source folders",
     "AT11": "setup.sh --pack opencode --name TestProject creates project with AGENTS.md and .opencode/ structure",
     "AT12": "bridge-controller pack contains CLAUDE.md, 3 commands (bridge-status, bridge-init-project, bridge-sync), controller rules, portfolio.json template, and reference guide",
-    "AT13": "bridge-multi-repo pack contains both claude-code and codex variants, each with 12 commands/skills, multi-repo rules, workspace docs templates, and reference playbook"
+    "AT13": "bridge-multi-repo pack contains both claude-code and codex variants, each with 12 commands/skills, multi-repo rules, workspace docs templates, and reference playbook",
+    "AT14": "bridge new --pack claude-code --name TestProject creates working project with correct structure and {{PROJECT_NAME}} replaced (same result as setup.sh)",
+    "AT15": "bridge add --pack claude-code --name TestProject --target ./existing-dir adds BRIDGE files without overwriting protected dirs",
+    "AT16": "bridge new --pack claude-code --personality strict injects strict vibe lines into all agent definitions",
+    "AT17": "bridge customize --personality mentoring swaps personality in an existing project, preserving all other content",
+    "AT18": "bridge customize --add-spec frontend backend copies specialization skill files into project",
+    "AT19": "bridge customize --remove-spec frontend removes specialization skill from project and updates .bridge.json",
+    "AT20": "bridge (no args) opens interactive TUI with selectable menu, pack chooser, personality picker, and spec toggles",
+    "AT21": "bridge pack builds all release archives (same output as package.sh)",
+    "AT22": "bridge orchestrator --type multi-repo --platform claude-code produces same result as install-orchestrators.sh",
+    "AT23": ".bridge.json tracks active personality, specializations, pack type, and version",
+    "AT24": "Specialization skill files contain domain-specific checklists and are valid SKILL.md format for all pack types",
+    "AT25": "Binary cross-compiles for linux/amd64, darwin/arm64, and windows/amd64"
   },
   "user_flows": {
     "UF01": {
@@ -177,6 +217,14 @@
     "UF06": {
       "title": "Cross-Repo Feature",
       "steps": ["bridge-scope → bridge-cross-design → bridge-start → (cross-repo slices) → bridge-gate (two-phase) → bridge-cross-review"]
+    },
+    "UF07": {
+      "title": "TUI-Guided New Project",
+      "steps": ["bridge → select 'New project' → pick pack → pick personality → toggle specs → enter name → project created"]
+    },
+    "UF08": {
+      "title": "Post-Install Customization",
+      "steps": ["bridge customize → change personality or add/remove specs → agent files patched → .bridge.json updated"]
     }
   },
   "risks": {
@@ -191,26 +239,77 @@
       "likelihood": "medium",
       "impact": "medium",
       "mitigation": "Single source of truth for command list; package.sh for consistent rebuilds"
+    },
+    "R03": {
+      "description": "Personality patching corrupts agent files if markers are missing or malformed",
+      "likelihood": "medium",
+      "impact": "high",
+      "mitigation": "Marker-based patching with validation; backup before patch; dry-run flag"
+    },
+    "R04": {
+      "description": "Go binary size bloat if packs are embedded",
+      "likelihood": "low",
+      "impact": "low",
+      "mitigation": "Thin binary strategy — download and cache packs at runtime, not embedded"
     }
   },
   "execution": {
     "recommended_slices": [
       {
-        "id": "S01",
-        "goal": "Apply Post-Delivery Feedback Loop edits to all packs",
-        "features": ["F09"],
-        "acceptance_tests": ["AT07", "AT08", "AT09"]
+        "id": "S15",
+        "goal": "Go project scaffolding — module, CLI skeleton with subcommands, CI build",
+        "features": ["F16"],
+        "acceptance_tests": ["AT25"]
       },
       {
-        "id": "S02",
-        "goal": "Verify all packs are consistent and commands match across packs",
-        "features": ["F07"],
-        "acceptance_tests": ["AT05"]
+        "id": "S16",
+        "goal": "Implement bridge new — replace setup.sh with Go equivalent",
+        "features": ["F16"],
+        "acceptance_tests": ["AT14"]
+      },
+      {
+        "id": "S17",
+        "goal": "Implement bridge add — replace add-bridge.sh with Go equivalent",
+        "features": ["F16"],
+        "acceptance_tests": ["AT15"]
+      },
+      {
+        "id": "S18",
+        "goal": "Create specialization skill files and personality profiles",
+        "features": ["F17", "F18"],
+        "acceptance_tests": ["AT24"]
+      },
+      {
+        "id": "S19",
+        "goal": "Add personality markers to all pack agent files and implement bridge customize",
+        "features": ["F16", "F17", "F18"],
+        "acceptance_tests": ["AT16", "AT17", "AT18", "AT19", "AT23"]
+      },
+      {
+        "id": "S20",
+        "goal": "Interactive TUI mode for all subcommands",
+        "features": ["F16"],
+        "acceptance_tests": ["AT20"]
+      },
+      {
+        "id": "S21",
+        "goal": "Implement bridge orchestrator and bridge pack subcommands",
+        "features": ["F16"],
+        "acceptance_tests": ["AT21", "AT22"]
+      },
+      {
+        "id": "S22",
+        "goal": "goreleaser config and cross-platform distribution",
+        "features": ["F19"],
+        "acceptance_tests": ["AT25"]
       }
     ],
     "open_questions": [
-      "Should the feedback loop classification be configurable per-project (e.g., in human-playbook.md)?",
-      "Should package.sh also run validation (e.g., check all 15 commands exist in each pack)?"
+      "Should specializations be versioned independently from the core packs?",
+      "Should bridge customize support user-defined specializations beyond shipped ones?",
+      "Should .bridge.json track installed pack version to enable bridge update?",
+      "Should personality affect methodology reference doc tone, or only agent definitions?",
+      "Should bridge auto-detect current pack type by looking for CLAUDE.md/AGENTS.md/.roomodes?"
     ]
   }
 }

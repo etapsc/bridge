@@ -1,6 +1,6 @@
 {
   "schema": "context.v1",
-  "project": "BRIDGE v2.1 Toolkit",
+  "project": "BRIDGE Toolkit",
   "last_updated": "2026-03-12",
   "feature_status": {
     "F01": "done",
@@ -17,7 +17,11 @@
     "F12": "done",
     "F13": "done",
     "F14": "done",
-    "F15": "done"
+    "F15": "done",
+    "F16": "planned",
+    "F17": "planned",
+    "F18": "planned",
+    "F19": "planned"
   },
   "slice_history": [
     {
@@ -111,10 +115,10 @@
       "notes": "Added tests/e2e/validate-eval-scenarios.sh to run scenarios 1-23 from docs/gates-evals/eval-scenarios.md in order, including guided TTY handoff for the interactive setup.sh cases and the live-agent scenario. Synced eval-scenarios.md to the current 9-archive release set and canonical full-pack orchestrator path, and documented the feedback loop in reference/BRIDGE-v2.1-methodology.md so Scenario 17 is executable."
     }
   ],
-  "current_slice": null,
+  "current_slice": "S15",
   "handoff": {
-    "stopped_at": "Slice S14 applied (2026-03-12) — added an eval-scenario validator script, refreshed the stale eval-scenarios expectations it depends on, and documented the feedback loop in the methodology reference.",
-    "next_immediate": "Run `bash tests/e2e/validate-eval-scenarios.sh` from a real terminal, complete the interactive/live prompts it opens, then fill docs/gates-evals/feedback-template.md and run /bridge-feedback with the results.",
+    "stopped_at": "v2.5.1 tagged and pushed. Repo renamed from bridge-v2 to bridge. v3 requirements scoped (F16-F19). Starting S15: Go project scaffolding.",
+    "next_immediate": "Implement S15: Go module init, CLI skeleton with subcommands, cross-compile verification.",
     "watch_out": [
       "Do not reintroduce `SKILL.md` files under `.agents/skills/` for internal procedures, or they will appear in Codex `$` discovery",
       "Do not add `profiles.bridge.web_search` back to config defaults unless verified against the current Codex config schema",
