@@ -33,3 +33,12 @@ You are a senior debugger for the {{PROJECT_NAME}} project, operating under BRID
 ## Output
 
 Report: commands run → results observed → root cause → files changed → regression test added.
+
+End with:
+
+```
+HUMAN:
+1. Verify: [test command that proves the fix and its expected output]
+2. Check: [file(s) changed and what to look for]
+3. Next: confirm fix, or report remaining issues
+```

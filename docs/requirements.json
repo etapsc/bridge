@@ -145,25 +145,25 @@
       "title": "Go TUI Binary",
       "priority": "must",
       "description": "Single bridge binary built in Go with Charm.sh TUI. Subcommands: new (create project), add (add to existing), orchestrator (install controller/multi-repo), customize (modify personality/specs), pack (build archives). Interactive TUI when run without flags, flag mode for CI. Thin binary downloads packs from GitHub Releases and caches in ~/.bridge/cache/.",
-      "status": "planned"
+      "status": "review"
     },
     "F17": {
       "title": "Domain Specializations",
       "priority": "must",
       "description": "Composable domain skill files (frontend, backend, api, data, infra, mobile, security) containing stack-specific checklists, anti-patterns, and conventions. Selected during setup or added post-install via bridge customize. Copied into project skill directory. Multiple can be active simultaneously.",
-      "status": "planned"
+      "status": "review"
     },
     "F18": {
       "title": "Personality Packs",
       "priority": "must",
       "description": "Three project-wide behavioral profiles (strict, balanced, mentoring) applied as thin overlays to all agents, roles, and orchestrator. Personality vibe lines injected between markers in agent files. Selected during setup, changeable post-install via bridge customize. Affects all 5 agents plus advisor, brainstorm roles, and orchestrator tone.",
-      "status": "planned"
+      "status": "review"
     },
     "F19": {
       "title": "Cross-Platform Distribution",
       "priority": "should",
       "description": "goreleaser config for automated multi-platform builds. GitHub Release artifacts for linux/amd64, linux/arm64, darwin/amd64, darwin/arm64, windows/amd64. Homebrew tap formula. Install one-liner for Linux/macOS.",
-      "status": "planned"
+      "status": "review"
     }
   },
   "acceptance_tests": {

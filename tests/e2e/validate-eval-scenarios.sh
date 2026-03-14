@@ -8,6 +8,8 @@ EVAL_ROOT="/tmp/bridge-eval"
 LIVE_ROOT="/tmp/bridge-live"
 PKG_TEST_ROOT="/tmp/bridge-pkg-test"
 INTERACTIVE_PROJECT="${BRIDGE_ROOT}/interactive-test"
+V3_TEST_DIR="/tmp/bridge-v3-validator-$$"
+V3_BINARY="${V3_TEST_DIR}/bridge"
 LOG_DIR="$(mktemp -d "${TMPDIR:-/tmp}/bridge-eval-validator.XXXXXX")"
 
 SKIP_INTERACTIVE=0
@@ -43,7 +45,7 @@ EXPECTED_ARCHIVES=(
 cleanup() {
   rm -rf "${LOG_DIR}"
   if [[ "${KEEP_ARTIFACTS}" -eq 0 && "${FAILED}" -eq 0 ]]; then
-    rm -rf "${EVAL_ROOT}" "${LIVE_ROOT}" "${PKG_TEST_ROOT}" "${INTERACTIVE_PROJECT}"
+    rm -rf "${EVAL_ROOT}" "${LIVE_ROOT}" "${PKG_TEST_ROOT}" "${INTERACTIVE_PROJECT}" "${V3_TEST_DIR}"
   fi
 }
 trap cleanup EXIT
@@ -216,8 +218,8 @@ check_readme_pack_mentions() {
 }
 
 reset_artifacts() {
-  rm -rf "${EVAL_ROOT}" "${LIVE_ROOT}" "${PKG_TEST_ROOT}" "${INTERACTIVE_PROJECT}"
-  mkdir -p "${EVAL_ROOT}"
+  rm -rf "${EVAL_ROOT}" "${LIVE_ROOT}" "${PKG_TEST_ROOT}" "${INTERACTIVE_PROJECT}" "${V3_TEST_DIR}"
+  mkdir -p "${EVAL_ROOT}" "${V3_TEST_DIR}"
 }
 
 reset_artifacts
@@ -750,7 +752,8 @@ for spec in \
   "tests/e2e/test-setup-packs.sh:32" \
   "tests/e2e/test-pack-consistency.sh:24" \
   "tests/e2e/test-advanced-packs.sh:37" \
-  "tests/e2e/test-workflow-content.sh:21"; do
+  "tests/e2e/test-workflow-content.sh:21" \
+  "tests/e2e/test-v3-binary.sh:70"; do
   script_path="${spec%%:*}"
   expected_passes="${spec##*:}"
   log_file="${LOG_DIR}/$(basename "${script_path}").log"
@@ -777,7 +780,7 @@ for spec in \
   fi
 done
 
-[[ "${SC18_E2E_TOTAL}" == "114" && "${SC18_E2E_FAILED}" == "0" ]] && pass "E2E suite totals 114/114 assertions" || fail "E2E suite expected 114 passed / 0 failed, got ${SC18_E2E_TOTAL} passed / ${SC18_E2E_FAILED} failed"
+[[ "${SC18_E2E_TOTAL}" == "184" && "${SC18_E2E_FAILED}" == "0" ]] && pass "E2E suite totals 184/184 assertions" || fail "E2E suite expected 184 passed / 0 failed, got ${SC18_E2E_TOTAL} passed / ${SC18_E2E_FAILED} failed"
 
 section "Scenario 19: Greenfield Workflow Walkthrough"
 SC19_CMD_DIR="${SC02_PROJECT}/.claude/commands"
@@ -983,6 +986,679 @@ else
   fi
 fi
 
+V3_BINARY_OK=0
+
+section "Scenario 24: Go Binary Build and Help (F16)"
+SC24_LOG="${LOG_DIR}/scenario24.log"
+if go build -o "${V3_BINARY}" "${BRIDGE_ROOT}/cmd/bridge/" 2>"${SC24_LOG}"; then
+  V3_BINARY_OK=1
+  pass "Go binary builds successfully"
+else
+  fail "Go binary build failed (see ${SC24_LOG})"
+fi
+
+if [[ "${V3_BINARY_OK}" -eq 1 ]]; then
+  SC24_HELP="$("${V3_BINARY}" --help 2>&1)"
+  SC24_SUBCMD_MISSING=0
+  for subcmd in new add orchestrator customize pack; do
+    if echo "${SC24_HELP}" | grep -q "${subcmd}"; then
+      pass "--help lists '${subcmd}' subcommand"
+    else
+      fail "--help missing '${subcmd}' subcommand"
+      SC24_SUBCMD_MISSING=$((SC24_SUBCMD_MISSING + 1))
+    fi
+  done
+
+  for subcmd in new add orchestrator customize pack; do
+    if "${V3_BINARY}" "${subcmd}" --help >/dev/null 2>&1; then
+      pass "'${subcmd} --help' exits 0"
+    else
+      fail "'${subcmd} --help' exits non-zero"
+    fi
+  done
+else
+  for subcmd in new add orchestrator customize pack; do
+    skip "Scenario 24 '${subcmd}' --help check requires Go binary (build failed)"
+  done
+  for subcmd in new add orchestrator customize pack; do
+    skip "Scenario 24 '${subcmd} --help' exit check requires Go binary (build failed)"
+  done
+fi
+
+section "Scenario 25: bridge new -- Claude Code (F16, AT14)"
+if [[ "${V3_BINARY_OK}" -ne 1 ]]; then
+  skip "Scenario 25 requires Go binary (build failed)"
+else
+  SC25_LOG="${LOG_DIR}/scenario25.log"
+  if "${V3_BINARY}" new --name "Eval CC" --pack claude-code --output "${V3_TEST_DIR}" >"${SC25_LOG}" 2>&1; then
+    pass "bridge new --pack claude-code exits successfully"
+  else
+    fail "bridge new --pack claude-code exited non-zero"
+  fi
+
+  SC25_PROJECT="${V3_TEST_DIR}/eval-cc"
+  [[ -d "${SC25_PROJECT}" ]] && pass "eval-cc project directory exists" || fail "eval-cc project directory missing"
+
+  if [[ -f "${SC25_PROJECT}/CLAUDE.md" ]] && grep -q 'Eval CC' "${SC25_PROJECT}/CLAUDE.md"; then
+    pass "CLAUDE.md present with project name"
+  else
+    fail "CLAUDE.md missing or not personalized"
+  fi
+
+  SC25_COMMANDS="$(count_files "${SC25_PROJECT}/.claude/commands" '*.md')"
+  [[ "${SC25_COMMANDS}" == "15" ]] && pass "15 commands in .claude/commands" || fail "Expected 15 commands, got ${SC25_COMMANDS}"
+
+  SC25_AGENTS="$(count_files "${SC25_PROJECT}/.claude/agents" '*.md')"
+  [[ "${SC25_AGENTS}" == "5" ]] && pass "5 agents in .claude/agents" || fail "Expected 5 agents, got ${SC25_AGENTS}"
+
+  SC25_SKILLS="$(count_dirs "${SC25_PROJECT}/.claude/skills")"
+  [[ "${SC25_SKILLS}" == "6" ]] && pass "6 skills in .claude/skills" || fail "Expected 6 skills, got ${SC25_SKILLS}"
+
+  if grep -R -n '{{PROJECT_NAME}}' "${SC25_PROJECT}" >/dev/null 2>&1; then
+    fail "Project still contains {{PROJECT_NAME}} placeholders"
+  else
+    pass "No {{PROJECT_NAME}} placeholders remain"
+  fi
+
+  if [[ -f "${SC25_PROJECT}/.bridge.json" ]]; then
+    if grep -q '"pack"' "${SC25_PROJECT}/.bridge.json" && grep -q 'claude-code' "${SC25_PROJECT}/.bridge.json" && grep -q 'balanced' "${SC25_PROJECT}/.bridge.json"; then
+      pass ".bridge.json has pack=claude-code and personality=balanced"
+    else
+      fail ".bridge.json missing expected pack or personality"
+    fi
+  else
+    fail ".bridge.json not created"
+  fi
+fi
+
+section "Scenario 26: bridge new -- Codex (F16, AT14)"
+if [[ "${V3_BINARY_OK}" -ne 1 ]]; then
+  skip "Scenario 26 requires Go binary (build failed)"
+else
+  SC26_LOG="${LOG_DIR}/scenario26.log"
+  if "${V3_BINARY}" new --name "Eval CX" --pack codex --output "${V3_TEST_DIR}" >"${SC26_LOG}" 2>&1; then
+    pass "bridge new --pack codex exits successfully"
+  else
+    fail "bridge new --pack codex exited non-zero"
+  fi
+
+  SC26_PROJECT="${V3_TEST_DIR}/eval-cx"
+  if [[ -f "${SC26_PROJECT}/AGENTS.md" ]] && grep -q 'Eval CX' "${SC26_PROJECT}/AGENTS.md"; then
+    pass "AGENTS.md present with project name"
+  else
+    fail "AGENTS.md missing or not personalized"
+  fi
+
+  SC26_SKILLS="$(count_dirs "${SC26_PROJECT}/.agents/skills")"
+  [[ "${SC26_SKILLS}" == "15" ]] && pass "15 skill dirs in .agents/skills" || fail "Expected 15 skill dirs, got ${SC26_SKILLS}"
+
+  SC26_PROCS="$(count_files "${SC26_PROJECT}/.agents/procedures" '*.md')"
+  [[ "${SC26_PROCS}" == "6" ]] && pass "6 procedure files in .agents/procedures" || fail "Expected 6 procedure files, got ${SC26_PROCS}"
+fi
+
+section "Scenario 27: bridge new with Personality (F16, F18, AT16)"
+if [[ "${V3_BINARY_OK}" -ne 1 ]]; then
+  skip "Scenario 27 requires Go binary (build failed)"
+else
+  SC27_LOG="${LOG_DIR}/scenario27.log"
+  if "${V3_BINARY}" new --name "Eval Strict" --pack claude-code --personality strict --output "${V3_TEST_DIR}" >"${SC27_LOG}" 2>&1; then
+    pass "bridge new --personality strict exits successfully"
+  else
+    fail "bridge new --personality strict exited non-zero"
+  fi
+
+  SC27_PROJECT="${V3_TEST_DIR}/eval-strict"
+  if [[ -f "${SC27_PROJECT}/.bridge.json" ]] && grep -q '"strict"' "${SC27_PROJECT}/.bridge.json"; then
+    pass ".bridge.json has personality strict"
+  else
+    fail ".bridge.json missing or personality not strict"
+  fi
+
+  SC27_ARCHITECT="${SC27_PROJECT}/.claude/agents/bridge-architect.md"
+  if [[ -f "${SC27_ARCHITECT}" ]] && grep -Eiq 'challenge|skeptic|justification|rigorous|evidence' "${SC27_ARCHITECT}"; then
+    pass "bridge-architect.md contains strict vibe"
+  else
+    fail "bridge-architect.md missing strict personality markers"
+  fi
+
+  SC27_CODER="${SC27_PROJECT}/.claude/agents/bridge-coder.md"
+  if [[ -f "${SC27_CODER}" ]] && grep -Eiq 'edge case|shortcut|TODO|justify|test' "${SC27_CODER}"; then
+    pass "bridge-coder.md contains strict vibe"
+  else
+    fail "bridge-coder.md missing strict personality markers"
+  fi
+fi
+
+section "Scenario 28: bridge new with Specs (F16, F17, AT18)"
+if [[ "${V3_BINARY_OK}" -ne 1 ]]; then
+  skip "Scenario 28 requires Go binary (build failed)"
+else
+  SC28_LOG="${LOG_DIR}/scenario28.log"
+  if "${V3_BINARY}" new --name "Eval Spec" --pack claude-code --spec frontend --spec backend --output "${V3_TEST_DIR}" >"${SC28_LOG}" 2>&1; then
+    pass "bridge new --spec frontend --spec backend exits successfully"
+  else
+    fail "bridge new --spec frontend --spec backend exited non-zero"
+  fi
+
+  SC28_PROJECT="${V3_TEST_DIR}/eval-spec"
+  if [[ -f "${SC28_PROJECT}/.claude/skills/bridge-spec-frontend/SKILL.md" ]]; then
+    pass "bridge-spec-frontend/SKILL.md installed"
+  else
+    fail "bridge-spec-frontend/SKILL.md missing"
+  fi
+
+  if [[ -f "${SC28_PROJECT}/.claude/skills/bridge-spec-backend/SKILL.md" ]]; then
+    pass "bridge-spec-backend/SKILL.md installed"
+  else
+    fail "bridge-spec-backend/SKILL.md missing"
+  fi
+
+  if [[ -f "${SC28_PROJECT}/.bridge.json" ]] && grep -q 'frontend' "${SC28_PROJECT}/.bridge.json" && grep -q 'backend' "${SC28_PROJECT}/.bridge.json"; then
+    pass ".bridge.json tracks both specializations"
+  else
+    fail ".bridge.json missing specialization tracking"
+  fi
+fi
+
+section "Scenario 29: bridge add -- Existing Project (F16, AT15)"
+if [[ "${V3_BINARY_OK}" -ne 1 ]]; then
+  skip "Scenario 29 requires Go binary (build failed)"
+else
+  SC29_EXISTING="${V3_TEST_DIR}/existing-add"
+  mkdir -p "${SC29_EXISTING}/src"
+  echo "console.log('hello');" > "${SC29_EXISTING}/src/app.js"
+  echo "# Existing Project" > "${SC29_EXISTING}/README.md"
+
+  SC29_LOG="${LOG_DIR}/scenario29.log"
+  if "${V3_BINARY}" add --name "Existing" --pack claude-code --target "${SC29_EXISTING}" >"${SC29_LOG}" 2>&1; then
+    pass "bridge add exits successfully"
+  else
+    fail "bridge add exited non-zero"
+  fi
+
+  if [[ -f "${SC29_EXISTING}/src/app.js" ]] && grep -q "console.log" "${SC29_EXISTING}/src/app.js"; then
+    pass "Existing files preserved"
+  else
+    fail "Existing files were modified or deleted"
+  fi
+
+  [[ -f "${SC29_EXISTING}/CLAUDE.md" ]] && pass "CLAUDE.md added to existing project" || fail "CLAUDE.md not added to existing project"
+
+  SC29_COMMANDS="$(count_files "${SC29_EXISTING}/.claude/commands" '*.md')"
+  [[ "${SC29_COMMANDS}" == "15" ]] && pass "15 commands added to existing project" || fail "Expected 15 commands in existing project, got ${SC29_COMMANDS}"
+
+  [[ -f "${SC29_EXISTING}/.bridge.json" ]] && pass ".bridge.json created in existing project" || fail ".bridge.json not created in existing project"
+fi
+
+section "Scenario 30: Interactive TUI (F16, AT20)"
+if [[ "${V3_BINARY_OK}" -ne 1 ]]; then
+  skip "Scenario 30 requires Go binary (build failed)"
+elif ! tty_available && [[ "${SKIP_INTERACTIVE}" -eq 0 ]]; then
+  skip "Scenario 30 requires a real TTY or --skip-interactive"
+elif [[ "${SKIP_INTERACTIVE}" -eq 1 ]]; then
+  skip "Scenario 30 skipped by --skip-interactive"
+else
+  note "Running 'bridge' with no arguments should launch a TUI wizard."
+  prompt_continue "Press Enter to launch the interactive TUI..."
+  (
+    cd "${V3_TEST_DIR}" || exit 1
+    "${V3_BINARY}"
+  )
+  if prompt_yes_no "Did the TUI wizard appear and allow project creation?"; then
+    pass "Interactive TUI appeared and functioned correctly"
+  else
+    fail "Interactive TUI did not appear or function correctly"
+  fi
+fi
+
+section "Scenario 31: Personality Swap (F16, F18, AT17)"
+if [[ "${V3_BINARY_OK}" -ne 1 ]]; then
+  skip "Scenario 31 requires Go binary (build failed)"
+else
+  SC31_PROJECT="${V3_TEST_DIR}/eval-cc"
+  SC31_LOG="${LOG_DIR}/scenario31.log"
+  if "${V3_BINARY}" customize --personality mentoring --target "${SC31_PROJECT}" >"${SC31_LOG}" 2>&1; then
+    pass "bridge customize --personality mentoring exits successfully"
+  else
+    fail "bridge customize --personality mentoring exited non-zero"
+  fi
+
+  if [[ -f "${SC31_PROJECT}/.bridge.json" ]] && grep -q '"mentoring"' "${SC31_PROJECT}/.bridge.json"; then
+    pass ".bridge.json updated to mentoring"
+  else
+    fail ".bridge.json not updated to mentoring"
+  fi
+
+  SC31_ARCHITECT="${SC31_PROJECT}/.claude/agents/bridge-architect.md"
+  if [[ -f "${SC31_ARCHITECT}" ]] && grep -Eiq 'mentor|teach|learning|explain|guidance|grow' "${SC31_ARCHITECT}"; then
+    pass "bridge-architect.md contains mentoring vibe"
+  else
+    fail "bridge-architect.md missing mentoring personality markers"
+  fi
+fi
+
+section "Scenario 32: Add/Remove Specs (F16, F17, AT18, AT19)"
+if [[ "${V3_BINARY_OK}" -ne 1 ]]; then
+  skip "Scenario 32 requires Go binary (build failed)"
+else
+  SC32_PROJECT="${V3_TEST_DIR}/eval-cc"
+  SC32_LOG="${LOG_DIR}/scenario32.log"
+
+  if "${V3_BINARY}" customize --add-spec api --add-spec security --target "${SC32_PROJECT}" >"${SC32_LOG}" 2>&1; then
+    pass "bridge customize --add-spec api --add-spec security exits successfully"
+  else
+    fail "bridge customize --add-spec api --add-spec security exited non-zero"
+  fi
+
+  if [[ -f "${SC32_PROJECT}/.claude/skills/bridge-spec-api/SKILL.md" ]]; then
+    pass "bridge-spec-api/SKILL.md installed"
+  else
+    fail "bridge-spec-api/SKILL.md missing after add"
+  fi
+
+  if [[ -f "${SC32_PROJECT}/.claude/skills/bridge-spec-security/SKILL.md" ]]; then
+    pass "bridge-spec-security/SKILL.md installed"
+  else
+    fail "bridge-spec-security/SKILL.md missing after add"
+  fi
+
+  if [[ -f "${SC32_PROJECT}/.bridge.json" ]] && grep -q 'api' "${SC32_PROJECT}/.bridge.json" && grep -q 'security' "${SC32_PROJECT}/.bridge.json"; then
+    pass ".bridge.json tracks both added specs"
+  else
+    fail ".bridge.json missing spec tracking after add"
+  fi
+
+  SC32_REMOVE_LOG="${LOG_DIR}/scenario32-remove.log"
+  if "${V3_BINARY}" customize --remove-spec api --target "${SC32_PROJECT}" >"${SC32_REMOVE_LOG}" 2>&1; then
+    pass "bridge customize --remove-spec api exits successfully"
+  else
+    fail "bridge customize --remove-spec api exited non-zero"
+  fi
+
+  if [[ ! -d "${SC32_PROJECT}/.claude/skills/bridge-spec-api" ]]; then
+    pass "bridge-spec-api directory removed"
+  else
+    fail "bridge-spec-api directory still present after removal"
+  fi
+
+  if [[ -f "${SC32_PROJECT}/.bridge.json" ]] && ! grep -q '"api"' "${SC32_PROJECT}/.bridge.json"; then
+    pass ".bridge.json no longer lists api"
+  else
+    fail ".bridge.json still lists api after removal"
+  fi
+
+  if [[ -f "${SC32_PROJECT}/.bridge.json" ]] && grep -q 'security' "${SC32_PROJECT}/.bridge.json"; then
+    pass ".bridge.json still tracks security"
+  else
+    fail ".bridge.json lost security tracking after api removal"
+  fi
+fi
+
+section "Scenario 33: Specialization Content Quality (F17, AT24)"
+SC33_SPEC_DIR="${BRIDGE_ROOT}/specializations"
+SC33_ALL_EXIST=1
+for spec_name in frontend backend api data infra mobile security; do
+  if [[ -d "${SC33_SPEC_DIR}/${spec_name}" ]]; then
+    pass "specializations/${spec_name} directory exists"
+  else
+    fail "specializations/${spec_name} directory missing"
+    SC33_ALL_EXIST=0
+  fi
+done
+
+if [[ "${SC33_ALL_EXIST}" -eq 1 ]]; then
+  SC33_FRONTMATTER_OK=1
+  for spec_name in frontend backend api data infra mobile security; do
+    spec_file="$(find "${SC33_SPEC_DIR}/${spec_name}" -name '*.md' -type f | head -1)"
+    if [[ -n "${spec_file}" ]]; then
+      first_line="$(head -1 "${spec_file}")"
+      if [[ "${first_line}" == "---" ]]; then
+        pass "specializations/${spec_name} has frontmatter"
+      else
+        fail "specializations/${spec_name} missing frontmatter (first line: ${first_line})"
+        SC33_FRONTMATTER_OK=0
+      fi
+
+      line_count="$(wc -l < "${spec_file}" | tr -d '[:space:]')"
+      if [[ "${line_count}" -ge 30 ]]; then
+        pass "specializations/${spec_name} has ${line_count} lines (>= 30)"
+      else
+        fail "specializations/${spec_name} has only ${line_count} lines (expected >= 30)"
+      fi
+    else
+      fail "specializations/${spec_name} has no .md file"
+    fi
+  done
+
+  SC33_FRONTEND_FILE="$(find "${SC33_SPEC_DIR}/frontend" -name '*.md' -type f | head -1)"
+  if [[ -n "${SC33_FRONTEND_FILE}" ]] && grep -Eiq 'accessibility|component|CSS|responsive' "${SC33_FRONTEND_FILE}"; then
+    pass "frontend spec covers expected domain terms"
+  else
+    fail "frontend spec missing domain terms (accessibility|component|CSS|responsive)"
+  fi
+
+  SC33_API_FILE="$(find "${SC33_SPEC_DIR}/api" -name '*.md' -type f | head -1)"
+  if [[ -n "${SC33_API_FILE}" ]] && grep -Eiq 'endpoint|REST|GraphQL|versioning|API' "${SC33_API_FILE}"; then
+    pass "api spec covers expected domain terms"
+  else
+    fail "api spec missing domain terms (endpoint|REST|GraphQL|versioning|API)"
+  fi
+
+  SC33_SECURITY_FILE="$(find "${SC33_SPEC_DIR}/security" -name '*.md' -type f | head -1)"
+  if [[ -n "${SC33_SECURITY_FILE}" ]] && grep -Eiq 'OWASP|authentication|authorization|vulnerability|injection' "${SC33_SECURITY_FILE}"; then
+    pass "security spec covers expected domain terms"
+  else
+    fail "security spec missing domain terms (OWASP|authentication|authorization|vulnerability|injection)"
+  fi
+fi
+
+section "Scenario 34: Personality Profile Quality (F18, AT23)"
+SC34_PROFILE_DIR="${BRIDGE_ROOT}/profiles"
+SC34_PROFILES_EXIST=1
+for profile_name in strict balanced mentoring; do
+  if [[ -f "${SC34_PROFILE_DIR}/${profile_name}.json" ]]; then
+    pass "profiles/${profile_name}.json exists"
+  else
+    fail "profiles/${profile_name}.json missing"
+    SC34_PROFILES_EXIST=0
+  fi
+done
+
+if [[ "${SC34_PROFILES_EXIST}" -eq 1 ]]; then
+  for profile_name in strict balanced mentoring; do
+    profile_file="${SC34_PROFILE_DIR}/${profile_name}.json"
+    if python3 -c "
+import json, sys
+with open(sys.argv[1]) as f:
+    data = json.load(f)
+vibes = data.get('vibes', {})
+expected_roles = {'architect','coder','debugger','auditor','evaluator','advisor','brainstorm','orchestrator'}
+actual = set(vibes.keys())
+if actual != expected_roles:
+    print(f'Key mismatch: missing={expected_roles-actual}, extra={actual-expected_roles}', file=sys.stderr)
+    sys.exit(1)
+empty = [k for k,v in vibes.items() if not v.strip()]
+if empty:
+    print(f'Empty vibes: {empty}', file=sys.stderr)
+    sys.exit(1)
+" "${profile_file}" 2>/dev/null; then
+      pass "profiles/${profile_name}.json has 8 vibe keys, all non-empty"
+    else
+      fail "profiles/${profile_name}.json missing or has empty vibe keys"
+    fi
+  done
+fi
+
+section "Scenario 35: Cross-Platform Build (F19, AT25)"
+SC35_GORELEASER="${BRIDGE_ROOT}/.goreleaser.yml"
+if [[ -f "${SC35_GORELEASER}" ]]; then
+  pass ".goreleaser.yml exists"
+else
+  SC35_GORELEASER="${BRIDGE_ROOT}/.goreleaser.yaml"
+  if [[ -f "${SC35_GORELEASER}" ]]; then
+    pass ".goreleaser.yaml exists"
+  else
+    fail ".goreleaser.yml missing"
+  fi
+fi
+
+if [[ -f "${SC35_GORELEASER}" ]]; then
+  grep -qi 'linux' "${SC35_GORELEASER}" && pass ".goreleaser mentions linux" || fail ".goreleaser missing linux"
+  grep -qi 'darwin' "${SC35_GORELEASER}" && pass ".goreleaser mentions darwin" || fail ".goreleaser missing darwin"
+  grep -qi 'windows' "${SC35_GORELEASER}" && pass ".goreleaser mentions windows" || fail ".goreleaser missing windows"
+  grep -Eiq 'profiles|specializations' "${SC35_GORELEASER}" && pass ".goreleaser bundles profiles/ and specializations/" || fail ".goreleaser missing profiles/ or specializations/ bundling"
+fi
+
+SC35_CROSS_TARGETS=(
+  "linux:amd64"
+  "linux:arm64"
+  "darwin:amd64"
+  "darwin:arm64"
+  "windows:amd64"
+)
+for target in "${SC35_CROSS_TARGETS[@]}"; do
+  target_os="${target%%:*}"
+  target_arch="${target##*:}"
+  if GOOS="${target_os}" GOARCH="${target_arch}" go build -o /dev/null ./cmd/bridge/ 2>/dev/null; then
+    pass "Cross-compile ${target_os}/${target_arch} succeeds"
+  else
+    fail "Cross-compile ${target_os}/${target_arch} failed"
+  fi
+done
+
+section "Scenario 36: Error Handling (F16)"
+if [[ "${V3_BINARY_OK}" -ne 1 ]]; then
+  skip "Scenario 36 requires Go binary (build failed)"
+else
+  if "${V3_BINARY}" new 2>/dev/null; then
+    fail "bridge new with no flags should fail"
+  else
+    pass "bridge new with no flags fails as expected"
+  fi
+
+  if "${V3_BINARY}" new --pack invalid-pack --name "Test" --output "${V3_TEST_DIR}" 2>/dev/null; then
+    fail "bridge new --pack invalid-pack should fail"
+  else
+    pass "bridge new --pack invalid-pack fails as expected"
+  fi
+
+  if "${V3_BINARY}" new --pack claude-code --personality aggressive --name "Test" --output "${V3_TEST_DIR}" 2>/dev/null; then
+    fail "bridge new --personality aggressive should fail"
+  else
+    pass "bridge new --personality aggressive fails as expected"
+  fi
+
+  SC36_CONFLICT="${V3_TEST_DIR}/eval-cc"
+  if [[ -d "${SC36_CONFLICT}" ]]; then
+    if "${V3_BINARY}" new --pack claude-code --name "Eval CC" --output "${V3_TEST_DIR}" 2>/dev/null; then
+      fail "bridge new into existing dir should fail"
+    else
+      pass "bridge new into existing dir fails as expected"
+    fi
+  else
+    skip "Scenario 36 existing dir test skipped (eval-cc dir not present)"
+  fi
+fi
+
+section "Scenario 37: .bridge.json Lifecycle (F16, F18, AT23)"
+if [[ "${V3_BINARY_OK}" -ne 1 ]]; then
+  skip "Scenario 37 requires Go binary (build failed)"
+else
+  SC37_LOG="${LOG_DIR}/scenario37.log"
+  if "${V3_BINARY}" new --name "Lifecycle" --pack full --personality strict --spec api --output "${V3_TEST_DIR}" >"${SC37_LOG}" 2>&1; then
+    pass "bridge new lifecycle project created"
+  else
+    fail "bridge new lifecycle project creation failed"
+  fi
+
+  SC37_PROJECT="${V3_TEST_DIR}/lifecycle"
+  SC37_BRIDGE_JSON="${SC37_PROJECT}/.bridge.json"
+
+  if [[ -f "${SC37_BRIDGE_JSON}" ]]; then
+    if grep -q '"full"' "${SC37_BRIDGE_JSON}" && grep -q '"strict"' "${SC37_BRIDGE_JSON}" && grep -q '"api"' "${SC37_BRIDGE_JSON}"; then
+      pass "Initial .bridge.json has pack=full, personality=strict, api in specializations"
+    else
+      fail "Initial .bridge.json missing expected values"
+    fi
+
+    SC37_INITIAL_PACK="$(python3 -c "import json; print(json.load(open('${SC37_BRIDGE_JSON}'))['pack'])" 2>/dev/null)"
+    SC37_INITIAL_VERSION="$(python3 -c "import json; print(json.load(open('${SC37_BRIDGE_JSON}')).get('version',''))" 2>/dev/null)"
+
+    SC37_CUSTOM1_LOG="${LOG_DIR}/scenario37-custom1.log"
+    if "${V3_BINARY}" customize --personality mentoring --target "${SC37_PROJECT}" >"${SC37_CUSTOM1_LOG}" 2>&1; then
+      pass "Personality swap to mentoring succeeds"
+    else
+      fail "Personality swap to mentoring failed"
+    fi
+
+    if grep -q '"mentoring"' "${SC37_BRIDGE_JSON}"; then
+      pass ".bridge.json updated to mentoring"
+    else
+      fail ".bridge.json not updated to mentoring"
+    fi
+
+    SC37_CUSTOM2_LOG="${LOG_DIR}/scenario37-custom2.log"
+    if "${V3_BINARY}" customize --add-spec security --target "${SC37_PROJECT}" >"${SC37_CUSTOM2_LOG}" 2>&1; then
+      pass "Add spec security succeeds"
+    else
+      fail "Add spec security failed"
+    fi
+
+    if grep -q 'security' "${SC37_BRIDGE_JSON}"; then
+      pass ".bridge.json tracks security"
+    else
+      fail ".bridge.json missing security after add"
+    fi
+
+    SC37_CUSTOM3_LOG="${LOG_DIR}/scenario37-custom3.log"
+    if "${V3_BINARY}" customize --remove-spec api --target "${SC37_PROJECT}" >"${SC37_CUSTOM3_LOG}" 2>&1; then
+      pass "Remove spec api succeeds"
+    else
+      fail "Remove spec api failed"
+    fi
+
+    if ! grep -q '"api"' "${SC37_BRIDGE_JSON}"; then
+      pass ".bridge.json no longer lists api"
+    else
+      fail ".bridge.json still lists api after removal"
+    fi
+
+    SC37_FINAL_PACK="$(python3 -c "import json; print(json.load(open('${SC37_BRIDGE_JSON}'))['pack'])" 2>/dev/null)"
+    SC37_FINAL_VERSION="$(python3 -c "import json; print(json.load(open('${SC37_BRIDGE_JSON}')).get('version',''))" 2>/dev/null)"
+
+    if [[ "${SC37_INITIAL_PACK}" == "${SC37_FINAL_PACK}" ]]; then
+      pass "Pack unchanged through customizations (${SC37_FINAL_PACK})"
+    else
+      fail "Pack changed during customizations: ${SC37_INITIAL_PACK} -> ${SC37_FINAL_PACK}"
+    fi
+
+    if [[ "${SC37_INITIAL_VERSION}" == "${SC37_FINAL_VERSION}" ]]; then
+      pass "Version unchanged through customizations"
+    else
+      fail "Version changed during customizations: ${SC37_INITIAL_VERSION} -> ${SC37_FINAL_VERSION}"
+    fi
+  else
+    fail ".bridge.json not created for lifecycle project"
+  fi
+fi
+
+section "Scenario 38: Agent HUMAN: Block Instructions (F03, F07, F09)"
+SC38_AGENTS=(bridge-architect bridge-coder bridge-debugger bridge-auditor bridge-evaluator)
+
+# Check each agent file has HUMAN: in the template
+SC38_AGENT_MISSING=0
+for agent in "${SC38_AGENTS[@]}"; do
+  agent_file="${BRIDGE_ROOT}/bridge-claude-code/.claude/agents/${agent}.md"
+  if [[ -f "${agent_file}" ]] && grep -q 'HUMAN:' "${agent_file}"; then
+    pass "Template ${agent}.md has HUMAN: block"
+  else
+    fail "Template ${agent}.md missing HUMAN: block"
+    SC38_AGENT_MISSING=$((SC38_AGENT_MISSING + 1))
+  fi
+done
+
+# Check HUMAN: is in the Output section of each agent
+SC38_OUTPUT_MISSING=0
+for agent in "${SC38_AGENTS[@]}"; do
+  agent_file="${BRIDGE_ROOT}/bridge-claude-code/.claude/agents/${agent}.md"
+  if [[ -f "${agent_file}" ]] && awk '/^## Output/,0' "${agent_file}" | grep -q 'HUMAN:'; then
+    pass "Template ${agent}.md Output section has HUMAN: block"
+  else
+    fail "Template ${agent}.md Output section missing HUMAN: block"
+    SC38_OUTPUT_MISSING=$((SC38_OUTPUT_MISSING + 1))
+  fi
+done
+
+# Check CLAUDE.md has post-subagent rule
+if grep -qi 'after receiving subagent output' "${BRIDGE_ROOT}/bridge-claude-code/CLAUDE.md"; then
+  pass "Template CLAUDE.md has post-subagent HUMAN: block rule"
+else
+  fail "Template CLAUDE.md missing post-subagent HUMAN: block rule"
+fi
+
+# Check CLAUDE.md has Human Handoff Protocol
+SC38_HUMAN_COUNT="$(grep -c 'HUMAN:' "${BRIDGE_ROOT}/bridge-claude-code/CLAUDE.md")"
+if [[ "${SC38_HUMAN_COUNT}" -ge 3 ]]; then
+  pass "Template CLAUDE.md has ${SC38_HUMAN_COUNT} HUMAN: references"
+else
+  fail "Template CLAUDE.md expected 3+ HUMAN: references, got ${SC38_HUMAN_COUNT}"
+fi
+
+# Check project agents match template
+SC38_DRIFT=0
+for agent in "${SC38_AGENTS[@]}"; do
+  if diff "${BRIDGE_ROOT}/bridge-claude-code/.claude/agents/${agent}.md" "${BRIDGE_ROOT}/.claude/agents/${agent}.md" >/dev/null 2>&1; then
+    pass "Project ${agent}.md synced with template"
+  else
+    fail "Project ${agent}.md drifted from template"
+    SC38_DRIFT=$((SC38_DRIFT + 1))
+  fi
+done
+
+# Check project CLAUDE.md matches template
+if diff "${BRIDGE_ROOT}/bridge-claude-code/CLAUDE.md" "${BRIDGE_ROOT}/CLAUDE.md" >/dev/null 2>&1; then
+  pass "Project CLAUDE.md synced with template"
+else
+  fail "Project CLAUDE.md drifted from template"
+fi
+
+section "Scenario 39: Project .claude/ Integrity (F03, F07)"
+
+# Check exactly 15 commands
+SC39_CMD_COUNT="$(count_files "${BRIDGE_ROOT}/.claude/commands" '*.md')"
+[[ "${SC39_CMD_COUNT}" == "15" ]] && pass "Project has exactly 15 commands" || fail "Project expected 15 commands, got ${SC39_CMD_COUNT}"
+
+# Check deleted commands are absent
+SC39_STALE_CMDS=0
+for cmd in bridge-migrate bridge-offload bridge-reintegrate; do
+  if [[ -f "${BRIDGE_ROOT}/.claude/commands/${cmd}.md" ]]; then
+    fail "Stale command ${cmd}.md still present"
+    SC39_STALE_CMDS=$((SC39_STALE_CMDS + 1))
+  else
+    pass "Deleted command ${cmd}.md absent"
+  fi
+done
+
+# Check exactly 6 skills
+SC39_SKILL_COUNT="$(count_dirs "${BRIDGE_ROOT}/.claude/skills")"
+[[ "${SC39_SKILL_COUNT}" == "6" ]] && pass "Project has exactly 6 skills" || fail "Project expected 6 skills, got ${SC39_SKILL_COUNT}"
+
+# Check deleted skills are absent
+SC39_STALE_SKILLS=0
+for skill in bridge-external-handoff bridge-external-reintegrate; do
+  if [[ -d "${BRIDGE_ROOT}/.claude/skills/${skill}" ]]; then
+    fail "Stale skill ${skill} still present"
+    SC39_STALE_SKILLS=$((SC39_STALE_SKILLS + 1))
+  else
+    pass "Deleted skill ${skill} absent"
+  fi
+done
+
+# Check exactly 5 agent files
+SC39_AGENT_COUNT="$(count_files "${BRIDGE_ROOT}/.claude/agents" '*.md')"
+[[ "${SC39_AGENT_COUNT}" == "5" ]] && pass "Project has exactly 5 agents" || fail "Project expected 5 agents, got ${SC39_AGENT_COUNT}"
+
+# Check commands match template
+if diff <(find "${BRIDGE_ROOT}/bridge-claude-code/.claude/commands" -maxdepth 1 -name '*.md' -printf '%f\n' | sort) <(find "${BRIDGE_ROOT}/.claude/commands" -maxdepth 1 -name '*.md' -printf '%f\n' | sort) >/dev/null 2>&1; then
+  pass "Command file list matches template"
+else
+  fail "Command file list drifted from template"
+fi
+
+# Check skills match template
+if diff <(find "${BRIDGE_ROOT}/bridge-claude-code/.claude/skills" -maxdepth 1 -type d -printf '%f\n' | sort) <(find "${BRIDGE_ROOT}/.claude/skills" -maxdepth 1 -type d -printf '%f\n' | sort) >/dev/null 2>&1; then
+  pass "Skill directory list matches template"
+else
+  fail "Skill directory list drifted from template"
+fi
+
+# Check agents match template
+if diff <(find "${BRIDGE_ROOT}/bridge-claude-code/.claude/agents" -maxdepth 1 -name '*.md' -printf '%f\n' | sort) <(find "${BRIDGE_ROOT}/.claude/agents" -maxdepth 1 -name '*.md' -printf '%f\n' | sort) >/dev/null 2>&1; then
+  pass "Agent file list matches template"
+else
+  fail "Agent file list drifted from template"
+fi
+
 section "Results"
 printf "  Passed: \033[32m%d\033[0m\n" "${PASSED}"
 printf "  Failed: \033[31m%d\033[0m\n" "${FAILED}"
@@ -1010,6 +1686,7 @@ if [[ "${KEEP_ARTIFACTS}" -eq 1 || "${FAILED}" -gt 0 ]]; then
   echo "  ${EVAL_ROOT}"
   echo "  ${LIVE_ROOT}"
   echo "  ${PKG_TEST_ROOT}"
+  echo "  ${V3_TEST_DIR}"
 fi
 
 exit "${FAILED}"

@@ -33,3 +33,13 @@ Follow the bridge-eval-generate skill procedure:
 ## Output
 
 Return summary of scenarios and tests generated, with estimated evaluation time for the human.
+
+End with:
+
+```
+HUMAN:
+1. Review: docs/gates-evals/eval-scenarios.md and docs/gates-evals/feedback-template.md
+2. Run: [eval validator command if available]
+3. Begin manual evaluation, then fill feedback-template.md
+4. Next: /bridge-feedback with your completed feedback
+```

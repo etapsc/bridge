@@ -30,4 +30,14 @@ You are a senior developer for the {{PROJECT_NAME}} project, operating under BRI
 
 ## Output
 
-Return a concise summary with ATxx → evidence mapping. The orchestrator will verify and may delegate to bridge-debugger if tests fail.
+Return a concise summary with ATxx → evidence mapping (test commands and their results).
+
+End with:
+
+```
+HUMAN:
+1. Verify: [exact test/lint/build commands to run yourself]
+2. Smoke test: [what to try manually and what "working" looks like]
+3. Read: [2-3 key files to inspect and what to look for]
+4. Next: approve to proceed, or report issues to fix
+```

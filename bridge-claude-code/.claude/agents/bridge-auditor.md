@@ -35,3 +35,12 @@ Follow the bridge-gate-audit skill procedure:
 ## Output
 
 Return the gate report summary with PASS/FAIL and any blocking issues.
+
+End with:
+
+```
+HUMAN:
+1. Verify: [exact test/lint commands to run yourself]
+2. Review: docs/gates-evals/gate-report.md — do results match what you see?
+3. Next: [if PASS] run /bridge-eval | [if FAIL] confirm blockers and feed fix instructions
+```

@@ -1,7 +1,7 @@
 {
   "schema": "context.v1",
   "project": "BRIDGE Toolkit",
-  "last_updated": "2026-03-13",
+  "last_updated": "2026-03-14",
   "feature_status": {
     "F01": "done",
     "F02": "done",
@@ -117,20 +117,20 @@
   ],
   "current_slice": "S15",
   "handoff": {
-    "stopped_at": "v2.5.1 tagged and pushed. Repo renamed from bridge-v2 to bridge. v3 requirements scoped (F16-F19). Starting S15: Go project scaffolding.",
-    "next_immediate": "Implement S15: Go module init, CLI skeleton with subcommands, cross-compile verification.",
+    "stopped_at": "All discrepancies resolved. requirements.json F16-F19 statuses updated to review. validate-eval-scenarios.sh extended with v3 scenarios 24-37. Full validator passes 222/222 (4 skips: TTY/live). Awaiting human eval feedback.",
+    "next_immediate": "Human evaluates v3 features using docs/gates-evals/eval-scenarios.md and fills docs/gates-evals/feedback-template.md. After feedback: /bridge-feedback to triage.",
     "watch_out": [
       "Do not reintroduce `SKILL.md` files under `.agents/skills/` for internal procedures, or they will appear in Codex `$` discovery",
       "Do not add `profiles.bridge.web_search` back to config defaults unless verified against the current Codex config schema",
       "Do not reintroduce deleted `bridge-claude-code/project` or `bridge-claude-code/plugin` paths into generated docs or tests — the root `bridge-claude-code/.claude` layout is the canonical source",
       "In multi-repo packs, repo topology lives in docs/requirements.json `workspace.repos`; runtime execution state lives in docs/context.json `repo_commands` and `repo_state`",
       "shellcheck is still not installed locally, so shell-script linting was skipped in the 2026-03-10 gate",
-      "Scenarios 6, 7, and 23 in tests/e2e/validate-eval-scenarios.sh require a real TTY; Scenario 23 also requires a supported live CLI such as Claude, Codex, or OpenCode"
+      "Scenarios 6, 7, 23, and 30 in tests/e2e/validate-eval-scenarios.sh require a real TTY; Scenario 23 also requires a supported live CLI such as Claude, Codex, or OpenCode"
     ]
   },
   "next_slice": null,
   "quality_gates": {
-    "last_run": "2026-03-13",
+    "last_run": "2026-03-14",
     "status": "pass"
   },
   "gate_history": [
@@ -184,13 +184,23 @@
       "warnings": 6,
       "coverage": "config:83.3%, customize:48.6%, pack:25.8%",
       "notes": "All 4 previous blockers (B01-B04) verified resolved. B04 fix confirmed: new.go and add.go now call ApplyPersonality() and AddSpecialization() after pack extraction. 16 Go tests pass, 45 smoke tests pass, 82 E2E assertions pass. Cross-compile verified for 5 targets (linux/amd64, linux/arm64, darwin/amd64, darwin/arm64, windows/amd64). 6 warnings: stale feature statuses, low test coverage, 3 ATs not verified (AT20/AT21/AT22 require TTY/runtime), shellcheck not installed, no v3 eval scenarios, Codex agent-level personality limited."
+    },
+    {
+      "date": "2026-03-14",
+      "result": "pass",
+      "features": ["F16", "F17", "F18", "F19"],
+      "blocking_issues": 0,
+      "warnings": 4,
+      "coverage": "config:83.3%, customize:48.6%, pack:25.8%",
+      "notes": "Post-change verification gate. W01 and W05 confirmed resolved (feature statuses aligned, v3 eval scenarios 24-37 added). All 5 agent files have HUMAN: block instructions. CLAUDE.md has post-subagent HUMAN: block rule. No stale files in project .claude/. All 9 archives present. 16 Go tests pass, 45 smoke tests pass, 184 E2E assertions pass (5 suites), 222 eval validator assertions pass (4 skips: TTY/live). Cross-compile verified for 5 targets. 4 remaining warnings: W02 (low coverage), W03 (AT20/AT21/AT22 not verified), W04 (shellcheck), W06 (Codex personality)."
     }
   ],
   "commands_to_run": {
     "test": "bash test.sh",
     "e2e": "for f in tests/e2e/test-setup-packs.sh tests/e2e/test-pack-consistency.sh tests/e2e/test-advanced-packs.sh tests/e2e/test-workflow-content.sh tests/e2e/test-v3-binary.sh; do bash \"$f\"; done",
     "e2e_v3": "bash tests/e2e/test-v3-binary.sh",
-    "eval_validator": "bash tests/e2e/validate-eval-scenarios.sh",
+    "eval_validator": "bash tests/e2e/validate-eval-scenarios.sh --skip-interactive --skip-live",
+    "eval_validator_full": "bash tests/e2e/validate-eval-scenarios.sh",
     "package": "./package.sh",
     "verify_commands": "for pack in bridge-full bridge-standalone bridge-claude-code bridge-codex bridge-opencode; do echo \"=== $pack ===\"; find $pack -name '*.md' | grep -c command; done",
     "verify_feedback_loop": "grep -rl 'ISSUES REPORTED' bridge-full/ bridge-standalone/ bridge-claude-code/ bridge-codex/ bridge-opencode/ | sort"
@@ -219,6 +229,14 @@
       "e2e_test_assertions": 70,
       "awaiting_feedback": true,
       "notes": "v3 evaluation pack for F16-F19. 14 new manual scenarios (24-37) covering Go TUI binary (bridge new, add, customize, error handling), domain specializations (7 specs, content quality), personality packs (3 profiles, vibe injection, personality swap), cross-platform distribution (goreleaser, 5 cross-compile targets), and .bridge.json lifecycle tracking. 1 new E2E test script: test-v3-binary.sh (70 assertions). All 70 assertions pass. Cumulative totals: 37 scenarios, 5 E2E test scripts, 184 assertions."
+    },
+    {
+      "date": "2026-03-14",
+      "scenarios_generated": 2,
+      "e2e_tests_generated": 0,
+      "e2e_test_assertions": 0,
+      "awaiting_feedback": true,
+      "notes": "Added 2 new scenarios (38-39) for agent HUMAN: block instructions and project .claude/ integrity verification. Updated validate-eval-scenarios.sh with 29 new assertions (251 total, 4 TTY/live skips). Updated feedback-template.md with sections for scenarios 38-39. Cumulative totals: 39 scenarios, 5 E2E test scripts, 184 E2E assertions, 251 eval validator assertions."
     }
   ],
   "discrepancies": [

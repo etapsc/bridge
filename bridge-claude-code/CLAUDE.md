@@ -53,6 +53,8 @@ Use subagents for isolated, focused work. The main session acts as orchestrator.
 
 Pass only relevant context when delegating: relevant JSON slices + file paths, not the whole repo.
 
+**After receiving subagent output:** Always present the subagent's HUMAN: block to the user (or compose one if the subagent omitted it). Never relay subagent results without a HUMAN: block.
+
 ## Post-Delivery Feedback Loop
 
 After presenting slice results and the HUMAN: block, WAIT for the user's response.

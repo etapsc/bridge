@@ -1,8 +1,8 @@
 # Evaluation Scenarios
 
-Generated: 2026-03-13
+Generated: 2026-03-14
 Project: BRIDGE v3 Toolkit
-Gate Status: PASS (2026-03-13, F16-F19 — 16 Go tests, 45 smoke tests, 82 E2E assertions, 5 cross-compile targets)
+Gate Status: PASS (2026-03-14, F16-F19 — 16 Go tests, 45 smoke tests, 184 E2E assertions, 251 eval validator assertions, 5 cross-compile targets)
 
 ## How to Use
 
@@ -1283,6 +1283,107 @@ Prerequisites for Scenarios 24-34:
 - [ ] Add-spec appends to specializations array
 - [ ] Remove-spec removes from specializations array
 - [ ] Pack and version unchanged through customizations
+
+---
+
+## Scenario 38: Agent HUMAN: Block Instructions (F03, F07, F09)
+
+**Goal:** Verify all 5 agent definitions include HUMAN: block instructions in their Output section, and CLAUDE.md enforces the post-subagent HUMAN: block rule.
+
+**Preconditions:** Terminal in the BRIDGE repo root directory.
+
+### Steps
+
+1. Check each agent file in the distributable template for HUMAN: block:
+   ```
+   for agent in bridge-architect bridge-coder bridge-debugger bridge-auditor bridge-evaluator; do
+     grep -q 'HUMAN:' "bridge-claude-code/.claude/agents/${agent}.md" && echo "OK: $agent" || echo "MISSING: $agent"
+   done
+   ```
+   - Expected: All 5 OK.
+2. Verify each agent's HUMAN: block is in the Output section (not just anywhere in the file):
+   ```
+   for agent in bridge-architect bridge-coder bridge-debugger bridge-auditor bridge-evaluator; do
+     awk '/^## Output/,0' "bridge-claude-code/.claude/agents/${agent}.md" | grep -q 'HUMAN:' && echo "OK: $agent Output has HUMAN:" || echo "FAIL: $agent"
+   done
+   ```
+   - Expected: All 5 OK.
+3. Check CLAUDE.md has the post-subagent HUMAN: block rule:
+   `grep -i 'after receiving subagent output' bridge-claude-code/CLAUDE.md`
+   - Expected: Rule about always presenting a HUMAN: block after subagent output.
+4. Verify CLAUDE.md still has the original Human Handoff Protocol section:
+   `grep -c 'HUMAN:' bridge-claude-code/CLAUDE.md`
+   - Expected: At least 3 occurrences (protocol template + delegation rule + feedback loop).
+5. Check project .claude/agents/ matches the template:
+   ```
+   for agent in bridge-architect bridge-coder bridge-debugger bridge-auditor bridge-evaluator; do
+     diff "bridge-claude-code/.claude/agents/${agent}.md" ".claude/agents/${agent}.md" >/dev/null 2>&1 && echo "SYNCED: $agent" || echo "DRIFT: $agent"
+   done
+   ```
+   - Expected: All 5 SYNCED.
+6. Check project CLAUDE.md matches the template:
+   `diff bridge-claude-code/CLAUDE.md CLAUDE.md`
+   - Expected: No differences.
+
+### Checklist
+- [ ] All 5 agent files have HUMAN: in Output section
+- [ ] CLAUDE.md has post-subagent HUMAN: block rule
+- [ ] CLAUDE.md has original Human Handoff Protocol
+- [ ] Project .claude/agents/ synced with template
+- [ ] Project CLAUDE.md synced with template
+
+---
+
+## Scenario 39: Project .claude/ Integrity (F03, F07)
+
+**Goal:** Verify the project's .claude/ directory has no stale files and matches the distributable template structure.
+
+**Preconditions:** Terminal in the BRIDGE repo root directory.
+
+### Steps
+
+1. Check exactly 15 commands exist (no extras from deleted commands):
+   `ls .claude/commands/ | wc -l`
+   - Expected: 15.
+2. Verify deleted commands are absent:
+   ```
+   for cmd in bridge-migrate bridge-offload bridge-reintegrate; do
+     [ -f ".claude/commands/${cmd}.md" ] && echo "STALE: $cmd" || echo "OK: $cmd absent"
+   done
+   ```
+   - Expected: All 3 absent.
+3. Check exactly 6 skills exist (no extras from deleted skills):
+   `ls .claude/skills/ | wc -l`
+   - Expected: 6.
+4. Verify deleted skills are absent:
+   ```
+   for skill in bridge-external-handoff bridge-external-reintegrate; do
+     [ -d ".claude/skills/${skill}" ] && echo "STALE: $skill" || echo "OK: $skill absent"
+   done
+   ```
+   - Expected: Both absent.
+5. Check exactly 5 agent files exist:
+   `ls .claude/agents/ | wc -l`
+   - Expected: 5.
+6. Verify all commands match the template:
+   `diff <(ls bridge-claude-code/.claude/commands/ | sort) <(ls .claude/commands/ | sort)`
+   - Expected: No differences.
+7. Verify all skills match the template:
+   `diff <(ls bridge-claude-code/.claude/skills/ | sort) <(ls .claude/skills/ | sort)`
+   - Expected: No differences.
+8. Verify all agent files match the template:
+   `diff <(ls bridge-claude-code/.claude/agents/ | sort) <(ls .claude/agents/ | sort)`
+   - Expected: No differences.
+
+### Checklist
+- [ ] Exactly 15 commands (no stale extras)
+- [ ] No deleted commands present (migrate, offload, reintegrate)
+- [ ] Exactly 6 skills (no stale extras)
+- [ ] No deleted skills present (external-handoff, external-reintegrate)
+- [ ] Exactly 5 agent files
+- [ ] Commands match template
+- [ ] Skills match template
+- [ ] Agents match template
 
 ---
 

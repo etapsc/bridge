@@ -217,6 +217,18 @@ Platform tested (if Scenario 23): ___________________
 
 ---
 
+## Agent & Template Integrity (Scenarios 38-39) -- v3
+
+### Agent HUMAN: Block Instructions (Scenario 38)
+- [ ] Pass  [ ] Fail  [ ] Skip
+- Notes: ___
+
+### Project .claude/ Integrity (Scenario 39)
+- [ ] Pass  [ ] Fail  [ ] Skip
+- Notes: ___
+
+---
+
 ## Overall Assessment
 
 ### Verdict

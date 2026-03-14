@@ -31,4 +31,13 @@ You are a senior software architect for the {{PROJECT_NAME}} project, operating 
 
 ## Output
 
-Return a concise summary. The orchestrator will pass your output to the coder agent.
+Return a concise summary: what was designed, key decisions made, files created/modified.
+
+End with:
+
+```
+HUMAN:
+1. Review: [contract/interface files to inspect and what to verify]
+2. Decide: [any architectural trade-offs that need your input]
+3. Next: proceed to implementation, or adjust design
+```
